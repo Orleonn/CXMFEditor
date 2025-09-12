@@ -1,0 +1,5 @@
+root = true
+
+[*.{cpp,hpp}]
+charset = utf-8          # UTF-8 without BOM
+end_of_line = lf         # using LF

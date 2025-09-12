@@ -1,0 +1,166 @@
+BasedOnStyle: Microsoft
+DisableFormat: false
+Language: Cpp
+Standard: c++20
+UseTab: Always
+TabWidth: 4
+ColumnLimit: 130
+AccessModifierOffset: -4
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Left
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignCaseArrows: true
+  AlignCaseColons: false
+AlignEscapedNewlines: LeftWithLastLine
+AlignOperands: AlignAfterOperator
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 1
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseExpressionOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortCompoundRequirementOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakBeforeMultilineStrings: false
+BinPackArguments: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  BeforeWhile: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BracedInitializerIndentWidth: 4
+BreakAdjacentStringLiterals: false
+BreakAfterReturnType: Automatic
+BreakArrays: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakAfterAttributes: Always
+BreakBeforeConceptDeclarations: Always
+BreakBeforeTernaryOperators: true
+BreakFunctionDefinitionParameters: false
+BreakInheritanceList: AfterComma
+BreakStringLiterals: false
+BreakTemplateDeclarations: Yes
+BreakConstructorInitializers: BeforeColon
+PenaltyReturnTypeOnItsOwnLine: 0
+PointerAlignment: Left
+PackConstructorInitializers: NextLineOnly
+CompactNamespaces: true
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Always
+FixNamespaceComments: true
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: NoIndent
+IndentGotoLabels: false
+IndentPPDirectives: BeforeHash
+IndentRequiresClause: false
+IndentWidth: 4
+IndentWrappedFunctionNames: false
+InsertBraces: false
+InsertNewlineAtEOF: true
+MaxEmptyLinesToKeep: 5
+KeepEmptyLines:
+  AtEndOfFile: true
+  AtStartOfBlock: true
+  AtStartOfFile: true
+LambdaBodyIndentation: Signature
+LineEnding: LF
+MacroBlockBegin: Without
+NamespaceIndentation: All
+PPIndentWidth: -1
+QualifierAlignment: Custom
+QualifierOrder: [friend, static, constexpr, inline, const, volatile, restrict, type]
+ReferenceAlignment: Left
+RemoveBracesLLVM: false
+RemoveParentheses: Leave
+RemoveSemicolon: false
+RequiresClausePosition: OwnLine
+RequiresExpressionIndentation: OuterScope
+SeparateDefinitionBlocks: Leave
+ShortNamespaceLines: 0
+SkipMacroDefinitionBody: true
+SortIncludes: Never
+SortUsingDeclarations: Never
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeJsonColon: false
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterForeachMacros: false
+  AfterFunctionDeclarationName: false
+  AfterFunctionDefinitionName: false
+  AfterIfMacros: false
+  AfterOverloadedOperator: false
+  AfterPlacementOperator: false
+  AfterRequiresInClause: true
+  AfterRequiresInExpression: false
+  BeforeNonEmptyParentheses: false
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpacesBeforeTrailingComments: 2
+SpacesInAngles: Never
+SpacesInContainerLiterals: false
+SpacesInLineCommentPrefix:
+  Minimum: 0
+  Maximum: 1
+SpacesInParens: Custom
+SpacesInParensOptions:
+  ExceptDoubleParentheses: false
+  InConditionalStatements: false
+  InCStyleCasts: false
+  InEmptyParentheses: false
+  Other: false
+SpacesInSquareBrackets: false
+# A vector of strings that should be interpreted as attributes/qualifiers instead of identifiers.
+# This can be useful for language extensions or static analyzer annotations.
+AttributeMacros: []
+# Macros which are ignored in front of a statement, as if they were an attribute.
+# So that they are not parsed as identifier, for example for Qts emit.
+StatementAttributeLikeMacros: []
+# A vector of macros that should be interpreted as complete statements.
+StatementMacros: []
+# A vector of non-keyword identifiers that should be interpreted as type names.
+TypeNames: []
+# A vector of macros that should be interpreted as type declarations instead of as function calls.
+TypenameMacros: []
+# A vector of macros which are whitespace-sensitive and should not be touched.
+WhitespaceSensitiveMacros: []
