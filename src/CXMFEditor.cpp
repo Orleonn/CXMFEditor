@@ -11,7 +11,7 @@
 
 CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
-	this->SetSizeHints( wxSize( 640,480 ), wxDefaultSize );
+	this->SetSizeHints( wxSize( 800,600 ), wxSize( 800,600 ) );
 
 	m_menubar = new wxMenuBar( 0 );
 	m_menuFile = new wxMenu();
@@ -37,9 +37,13 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	m_menubar->Append( m_menuFile, _("File") );
 
 	m_menuInfo = new wxMenu();
-	wxMenuItem* m_menuInfoVersion;
-	m_menuInfoVersion = new wxMenuItem( m_menuInfo, wxID_ANY, wxString( _("Version") ) , wxEmptyString, wxITEM_NORMAL );
-	m_menuInfo->Append( m_menuInfoVersion );
+	wxMenuItem* m_menuInfoAbout;
+	m_menuInfoAbout = new wxMenuItem( m_menuInfo, wxID_ANY, wxString( _("About") ) , wxEmptyString, wxITEM_NORMAL );
+	m_menuInfo->Append( m_menuInfoAbout );
+
+	wxMenuItem* m_menuInfoGithub;
+	m_menuInfoGithub = new wxMenuItem( m_menuInfo, wxID_ANY, wxString( _("GitHub") ) , wxEmptyString, wxITEM_NORMAL );
+	m_menuInfo->Append( m_menuInfoGithub );
 
 	m_menubar->Append( m_menuInfo, _("Info") );
 
@@ -49,7 +53,9 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	bSizer4 = new wxBoxSizer( wxVERTICAL );
 
 	m_ModelMainPanel = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-	m_ModelPanel_Settings = new wxPanel( m_ModelMainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_ModelMainPanel->Enable( false );
+
+	m_ModelPanel_Main = new wxPanel( m_ModelMainPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer7;
 	bSizer7 = new wxBoxSizer( wxVERTICAL );
 
@@ -59,11 +65,11 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	wxBoxSizer* bSizer8;
 	bSizer8 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_staticText3 = new wxStaticText( m_ModelPanel_Settings, wxID_ANY, _("Model name"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText3 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Model name"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText3->Wrap( -1 );
 	bSizer8->Add( m_staticText3, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_textCtrlModelName = new wxTextCtrl( m_ModelPanel_Settings, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 150,-1 ), 0 );
+	m_textCtrlModelName = new wxTextCtrl( m_ModelPanel_Main, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 150,-1 ), 0 );
 	#ifdef __WXGTK__
 	if ( !m_textCtrlModelName->HasFlag( wxTE_MULTILINE ) )
 	{
@@ -74,18 +80,40 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	#endif
 	m_textCtrlModelName->SetToolTip( _("Specify the model name.\n\nIf this field is empty, the model will be named as the file.") );
 
-	bSizer8->Add( m_textCtrlModelName, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	bSizer8->Add( m_textCtrlModelName, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	bSizer8->Add( 5, 0, 0, wxEXPAND, 5 );
 
-	m_staticText31 = new wxStaticText( m_ModelPanel_Settings, wxID_ANY, _("Skinned:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText31 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Skinned:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText31->Wrap( -1 );
 	bSizer8->Add( m_staticText31, 0, wxALL|wxALIGN_CENTER_VERTICAL, 2 );
 
-	m_TextSkinned = new wxStaticText( m_ModelPanel_Settings, wxID_ANY, _("OFF"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_TextSkinned = new wxStaticText( m_ModelPanel_Main, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	m_TextSkinned->Wrap( -1 );
-	bSizer8->Add( m_TextSkinned, 0, wxALL|wxALIGN_CENTER_VERTICAL, 2 );
+	bSizer8->Add( m_TextSkinned, 1, wxALL|wxALIGN_CENTER_VERTICAL, 2 );
+
+
+	bSizer8->Add( 5, 0, 0, wxEXPAND, 5 );
+
+	m_staticText7 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Total Verticies:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText7->Wrap( -1 );
+	bSizer8->Add( m_staticText7, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+
+	m_TextTotalVerts = new wxStaticText( m_ModelPanel_Main, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_TextTotalVerts->Wrap( -1 );
+	bSizer8->Add( m_TextTotalVerts, 1, wxALL|wxALIGN_CENTER_VERTICAL, 2 );
+
+
+	bSizer8->Add( 5, 0, 0, wxEXPAND, 5 );
+
+	m_staticText71 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Total Faces:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText71->Wrap( -1 );
+	bSizer8->Add( m_staticText71, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+
+	m_TextTotalFaces = new wxStaticText( m_ModelPanel_Main, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_TextTotalFaces->Wrap( -1 );
+	bSizer8->Add( m_TextTotalFaces, 1, wxALL|wxALIGN_CENTER_VERTICAL, 2 );
 
 
 	bSizer7->Add( bSizer8, 0, wxEXPAND, 5 );
@@ -99,11 +127,11 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	wxBoxSizer* bSizer9;
 	bSizer9 = new wxBoxSizer( wxVERTICAL );
 
-	m_staticText6 = new wxStaticText( m_ModelPanel_Settings, wxID_ANY, _("Meshes"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText6 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Meshes"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText6->Wrap( -1 );
 	bSizer9->Add( m_staticText6, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_staticline2 = new wxStaticLine( m_ModelPanel_Settings, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	m_staticline2 = new wxStaticLine( m_ModelPanel_Main, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
 	bSizer9->Add( m_staticline2, 0, wxEXPAND | wxALL, 5 );
 
 
@@ -112,11 +140,11 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	wxBoxSizer* bSizer10;
 	bSizer10 = new wxBoxSizer( wxVERTICAL );
 
-	m_staticText5 = new wxStaticText( m_ModelPanel_Settings, wxID_ANY, _("Bones"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText5 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Bones"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText5->Wrap( -1 );
 	bSizer10->Add( m_staticText5, 1, wxALL|wxALIGN_CENTER_VERTICAL|wxALIGN_CENTER_HORIZONTAL, 5 );
 
-	m_staticline21 = new wxStaticLine( m_ModelPanel_Settings, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	m_staticline21 = new wxStaticLine( m_ModelPanel_Main, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
 	bSizer10->Add( m_staticline21, 0, wxEXPAND | wxALL, 5 );
 
 
@@ -128,7 +156,7 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	wxBoxSizer* bSizer71;
 	bSizer71 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_listMesh = new wxListbook( m_ModelPanel_Settings, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
+	m_listMesh = new wxListbook( m_ModelPanel_Main, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
 	#ifdef __WXGTK__ // Small icon style not supported in GTK
 	wxListView* m_listMeshListView = m_listMesh->GetListView();
 	long m_listMeshFlags = m_listMeshListView->GetWindowStyleFlag();
@@ -141,10 +169,10 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 
 	bSizer71->Add( m_listMesh, 1, wxEXPAND | wxALL, 5 );
 
-	m_staticline1 = new wxStaticLine( m_ModelPanel_Settings, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_VERTICAL );
+	m_staticline1 = new wxStaticLine( m_ModelPanel_Main, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_VERTICAL );
 	bSizer71->Add( m_staticline1, 0, wxALL|wxEXPAND, 5 );
 
-	m_listBones = new wxListbook( m_ModelPanel_Settings, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
+	m_listBones = new wxListbook( m_ModelPanel_Main, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLB_DEFAULT );
 	#ifdef __WXGTK__ // Small icon style not supported in GTK
 	wxListView* m_listBonesListView = m_listBones->GetListView();
 	long m_listBonesFlags = m_listBonesListView->GetWindowStyleFlag();
@@ -161,25 +189,28 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	bSizer7->Add( bSizer71, 1, wxEXPAND, 5 );
 
 
-	m_ModelPanel_Settings->SetSizer( bSizer7 );
-	m_ModelPanel_Settings->Layout();
-	bSizer7->Fit( m_ModelPanel_Settings );
-	m_ModelMainPanel->AddPage( m_ModelPanel_Settings, _("Settings"), false );
+	m_ModelPanel_Main->SetSizer( bSizer7 );
+	m_ModelPanel_Main->Layout();
+	bSizer7->Fit( m_ModelPanel_Main );
+	m_ModelMainPanel->AddPage( m_ModelPanel_Main, _("Main"), false );
 
 	bSizer4->Add( m_ModelMainPanel, 1, wxEXPAND | wxALL, 0 );
 
 
 	this->SetSizer( bSizer4 );
 	this->Layout();
+	m_statusBar = this->CreateStatusBar( 1, wxSTB_DEFAULT_STYLE|wxSTB_ELLIPSIZE_END, wxID_ANY );
 
 	this->Centre( wxBOTH );
 
 	// Connect Events
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CXMFWindow::onWindowButton_Close ) );
 	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Import ), this, m_menuFileImport->GetId());
 	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Open ), this, m_menuFileOpen->GetId());
 	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Save ), this, m_menuFileSave->GetId());
 	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Exit ), this, m_menuFileExit->GetId());
-	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_Version ), this, m_menuInfoVersion->GetId());
+	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_About ), this, m_menuInfoAbout->GetId());
+	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_Github ), this, m_menuInfoGithub->GetId());
 }
 
 CXMFWindow::~CXMFWindow()
@@ -188,7 +219,7 @@ CXMFWindow::~CXMFWindow()
 
 CXMFImportDlg::CXMFImportDlg( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
 {
-	this->SetSizeHints( wxSize( 170,200 ), wxSize( 170,200 ) );
+	this->SetSizeHints( wxSize( 170,220 ), wxSize( 170,220 ) );
 
 	wxBoxSizer* mainSizer;
 	mainSizer = new wxBoxSizer( wxVERTICAL );
@@ -211,6 +242,11 @@ CXMFImportDlg::CXMFImportDlg( wxWindow* parent, wxWindowID id, const wxString& t
 	m_sliderGSN = new wxSlider( this, wxID_ANY, 175, 5, 175, wxDefaultPosition, wxDefaultSize, wxSL_BOTH|wxSL_HORIZONTAL|wxSL_VALUE_LABEL );
 	bSizer21->Add( m_sliderGSN, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 
+	m_checkFStatic = new wxCheckBox( this, wxID_ANY, _("Force static"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_checkFStatic->SetToolTip( _("Force import model as static.") );
+
+	bSizer21->Add( m_checkFStatic, 0, wxALL, 10 );
+
 
 	mainSizer->Add( bSizer21, 1, wxEXPAND, 0 );
 
@@ -224,7 +260,7 @@ CXMFImportDlg::CXMFImportDlg( wxWindow* parent, wxWindowID id, const wxString& t
 	bSizer24->Add( m_buttonOk, 1, wxALL|wxALIGN_CENTER_HORIZONTAL, 5 );
 
 
-	mainSizer->Add( bSizer24, 1, wxALIGN_CENTER_HORIZONTAL|wxEXPAND, 5 );
+	mainSizer->Add( bSizer24, 1, wxEXPAND, 5 );
 
 
 	this->SetSizer( mainSizer );
@@ -233,7 +269,7 @@ CXMFImportDlg::CXMFImportDlg( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Centre( wxBOTH );
 
 	// Connect Events
-	m_buttonOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFImportDlg::onSettings_Ok ), NULL, this );
+	m_buttonOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFImportDlg::onButton_Ok ), NULL, this );
 }
 
 CXMFImportDlg::~CXMFImportDlg()

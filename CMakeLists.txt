@@ -12,6 +12,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+set(FETCHCONTENT_BASE_DIR ${CMAKE_SOURCE_DIR}/build/_deps CACHE PATH "Directory for downloaded dependencies" FORCE)
 include(FetchContent)
 include(cmake/dependencies.cmake)
 
@@ -22,6 +23,9 @@ set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 set(SOURCE_FILES
 	${SOURCE_DIR}/main.cpp
 	${SOURCE_DIR}/CXMFEditor.cpp
+	${SOURCE_DIR}/CXMF.cpp
+	${SOURCE_DIR}/AssimpDefs.cpp
+	${SOURCE_DIR}/ModelPreview.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
