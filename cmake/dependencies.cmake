@@ -50,6 +50,11 @@ set(wxBUILD_STRIPPED_RELEASE_DEFAULT ON)
 set(wxUSE_UNICODE_UTF8 ON)
 set(wxUSE_OPENGL ON)
 
+set(GLM_BUILD_LIBRARY OFF)
+set(GLM_BUILD_TESTS OFF)
+set(GLM_BUILD_INSTALL OFF)
+set(GLM_ENABLE_CXX_20 ON)
+
 
 
 FetchContent_Declare(
@@ -68,5 +73,10 @@ FetchContent_Declare(
 	GIT_REPOSITORY	https://github.com/wxWidgets/wxWidgets.git
 	GIT_TAG			49c6810948f40c457e3d0848b9111627b5b61de5 # 3.3.1
 )
+FetchContent_Declare(
+	glm
+	GIT_REPOSITORY	https://github.com/g-truc/glm.git
+	GIT_TAG			0af55ccecd98d4e5a8d1fad7de25ba429d60e863 # 1.0.1
+)
 
-FetchContent_MakeAvailable(zlib assimp wxWidgets)
+FetchContent_MakeAvailable(zlib assimp wxWidgets glm)
