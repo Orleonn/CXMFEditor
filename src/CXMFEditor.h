@@ -72,6 +72,7 @@ class CXMFWindow : public wxFrame
 		virtual void onMenuSelect_File_Open( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_File_Save( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_File_Exit( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onMenuSelect_Info_Preview( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_Info_About( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_Info_Github( wxCommandEvent& event ) { event.Skip(); }
 

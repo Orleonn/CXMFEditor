@@ -37,6 +37,10 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	m_menubar->Append( m_menuFile, _("File") );
 
 	m_menuInfo = new wxMenu();
+	wxMenuItem* m_menuInfoPreview;
+	m_menuInfoPreview = new wxMenuItem( m_menuInfo, wxID_ANY, wxString( _("Viewport controls") ) , wxEmptyString, wxITEM_NORMAL );
+	m_menuInfo->Append( m_menuInfoPreview );
+
 	wxMenuItem* m_menuInfoAbout;
 	m_menuInfoAbout = new wxMenuItem( m_menuInfo, wxID_ANY, wxString( _("About") ) , wxEmptyString, wxITEM_NORMAL );
 	m_menuInfo->Append( m_menuInfoAbout );
@@ -209,6 +213,7 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Open ), this, m_menuFileOpen->GetId());
 	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Save ), this, m_menuFileSave->GetId());
 	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Exit ), this, m_menuFileExit->GetId());
+	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_Preview ), this, m_menuInfoPreview->GetId());
 	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_About ), this, m_menuInfoAbout->GetId());
 	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_Github ), this, m_menuInfoGithub->GetId());
 }

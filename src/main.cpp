@@ -111,6 +111,7 @@ private:
 	void onMenuSelect_File_Open(wxCommandEvent& event) override;
 	void onMenuSelect_File_Save(wxCommandEvent& event) override;
 	void onMenuSelect_File_Exit(wxCommandEvent& event) override;
+	void onMenuSelect_Info_Preview(wxCommandEvent& event) override;
 	void onMenuSelect_Info_About(wxCommandEvent& event) override;
 	void onMenuSelect_Info_Github(wxCommandEvent& event) override;
 
@@ -132,7 +133,7 @@ MainWindow::MainWindow()
 	: Super(nullptr), m_PreviewWnd(nullptr), m_Model(nullptr), m_HasChanges(false)
 {
 	m_PreviewWnd = new PreviewWindow(Super::m_ModelMainPanel);
-	Super::m_ModelMainPanel->AddPage(m_PreviewWnd, "Preview", false);
+	Super::m_ModelMainPanel->AddPage(m_PreviewWnd, "Viewport", false);
 
 	this->Show(true);
 }
@@ -327,6 +328,32 @@ void MainWindow::_fill_as_skinned()
 	const std::string pagePrefix = "Mesh ";
 	std::string pageName;
 	const uint32_t meshesCount = static_cast<uint32_t>(model.meshes.size());
+	for (uint32_t i_mesh = 0; i_mesh < meshesCount; ++i_mesh)
+	{
+		pageName = pagePrefix + std::to_string(i_mesh);
+
+		const cxmf::SkinnedMesh& mesh = model.meshes[i_mesh];
+		const size_t vertexCount = mesh.vertices.size();
+		const size_t faceCount = mesh.indices.size() / 3;
+		totalVerticies += vertexCount;
+		totalFaces += faceCount;
+
+		wxPanel* const mainPanel = new wxPanel(meshList);
+		wxBoxSizer* const mainSizer = new wxBoxSizer(wxVERTICAL);
+
+		_add_mesh_name_field(mainPanel, mainSizer, mesh.name);
+		_add_texture_path_field(mainPanel, mainSizer, mesh.texturesPath);
+		_add_vertex_counter(mainPanel, mainSizer, vertexCount);
+		_add_face_counter(mainPanel, mainSizer, faceCount);
+
+		mainPanel->SetSizer(mainSizer);
+		mainPanel->Layout();
+		mainSizer->Fit(mainPanel);
+		meshList->AddPage(mainPanel, pageName);
+	}
+
+	set_total_verticies(totalVerticies);
+	set_total_faces(totalFaces);
 }
 
 void MainWindow::set_total_verticies(size_t count)
@@ -349,6 +376,7 @@ void MainWindow::set_status_text(const std::string& text)
 void MainWindow::Reset()
 {
 	_show_controls(m_Model != nullptr);
+	m_PreviewWnd->SetModel(m_Model);
 	if (m_Model)
 	{
 		if (m_Model->StaticModelCast() != nullptr)
@@ -400,6 +428,20 @@ void MainWindow::onMenuSelect_File_Save(wxCommandEvent& /* event */)
 void MainWindow::onMenuSelect_File_Exit(wxCommandEvent& /* event */)
 {
 	StartClosing();
+}
+
+void MainWindow::onMenuSelect_Info_Preview(wxCommandEvent& event)
+{
+	std::string msg;
+	msg += "[LMB] - Rotate camera\n";
+	msg += "[LMB+SHIFT] - Move camera\n";
+	msg += "[SCROLL] - Zoom\n";
+	msg += "[SCROLL+SHIFT] - Fast zoom\n";
+	msg += "[R] - Reset camera\n";
+	msg += "[Z] - ON/OFF wireframe\n";
+	msg += "[X] - ON/OFF grid\n";
+	msg += "[C] - ON/OFF light\n";
+	wxMessageBox(msg, "Viewport controls", wxOK | wxCENTRE | wxICON_INFORMATION, this);
 }
 
 void MainWindow::onMenuSelect_Info_About(wxCommandEvent& /* event */)

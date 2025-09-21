@@ -579,7 +579,8 @@ IModel* ImportModel(const std::string& filePath, const ImportSettings& importInf
 						   aiProcess_SortByPType |				 //
 						   // aiProcess_OptimizeMeshes |			  //
 						   // aiProcess_OptimizeGraph |			  //
-						   aiProcess_FlipUVs |	//
+						   aiProcess_FlipUVs |			 //
+						   aiProcess_FlipWindingOrder |	 //
 						   aiProcess_GenBoundingBoxes;
 
 	if (importInfo.enableGSN)

@@ -34,7 +34,7 @@ set(SOURCE_FILES
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE assimp wx::net wx::core wx::base glm::glm)
+target_link_libraries(${PROJECT_NAME} PRIVATE assimp wx::net wx::core wx::base wx::gl glm::glm)
 
 if(MSVC)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE
