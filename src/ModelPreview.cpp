@@ -20,7 +20,7 @@ struct viewport_camera
 
 	viewport_camera()
 		: projView(1.0F),
-		  rotation(0.0F, 0.0F, 0.0F, 1.0F),
+		  rotation(1.0F, 0.0F, 0.0F, 0.0F),
 		  position(0.0F, 0.0F, 0.0F),
 		  target(0.0F, 0.0F, 0.0F),
 		  distance(5.0F),
@@ -53,8 +53,7 @@ struct viewport_camera
 	void update()
 	{
 		position = target - forward() * distance;
-		glm::mat4 proj = glm::perspective(fovy, aspect, zNear, zFar);
-		proj[1][1] *= -1.0F;
+		const glm::mat4 proj = glm::perspective(fovy, aspect, zNear, zFar);
 		const glm::mat4 view = glm::lookAt(position, center(), up());
 		projView = proj * view;
 	}
@@ -82,6 +81,8 @@ struct PreviewWindow::impl
 	wxPoint lastCPos;
 	camera_move_mode moveMode;
 	draw_mesh_mode drawMeshMode;
+	float yaw;
+	float pitch;
 	bool shiftIsPressed;
 	bool allowFloorGrid;
 	bool allowFlashlight;
@@ -92,6 +93,8 @@ struct PreviewWindow::impl
 		  lastCPos(),
 		  moveMode(CAMERA_MODE_NONE),
 		  drawMeshMode(DRAW_MESH_MODE_MESHES),
+		  yaw(0.0F),
+		  pitch(0.0F),
 		  shiftIsPressed(false),
 		  allowFloorGrid(true),
 		  allowFlashlight(true)
@@ -222,6 +225,8 @@ void PreviewWindow::onKeyCallback(wxKeyEvent& event)
 			if (is_pressed)
 			{
 				data.cam = viewport_camera();
+				data.yaw = 0.0F;
+				data.pitch = 0.0F;
 				this->Refresh();
 			}
 			break;
@@ -293,21 +298,26 @@ void PreviewWindow::onUpdateCallback(wxUpdateUIEvent& event)
 
 	const float deltaX = newCPos.x - data.lastCPos.x;
 	const float deltaY = newCPos.y - data.lastCPos.y;
+	data.lastCPos = newCPos;
 
 	if (data.moveMode == CAMERA_MODE_ROTATE)
 	{
-		const glm::quat rotX = glm::angleAxis(deltaY * sensitivity, glm::vec3(1.0F, 0.0F, 0.0F));
-		const glm::quat rotY = glm::angleAxis(deltaX * sensitivity, glm::vec3(0.0F, 1.0F, 0.0F));
-		const glm::quat newRot = rotY * data.cam.rotation * rotX;
-		data.cam.rotation = glm::normalize(newRot);
+		constexpr float pitchLimit = glm::radians(90.0F);
+
+		data.yaw += -deltaX * sensitivity;
+		data.pitch += -deltaY * sensitivity;
+		data.pitch = glm::clamp<float>(data.pitch, -pitchLimit, pitchLimit);
+
+		const glm::quat qPitch = glm::angleAxis(data.pitch, glm::vec3(1.0F, 0.0F, 0.0F));
+		const glm::quat qYaw = glm::angleAxis(data.yaw, glm::vec3(0.0F, 1.0F, 0.0F));
+		data.cam.rotation = glm::normalize(qYaw * qPitch);
 	}
 	else if (data.moveMode == CAMERA_MODE_MOVE)
 	{
 		data.cam.target -= data.cam.right() * deltaX * sensitivity;
-		data.cam.target += data.cam.up() * -deltaY * sensitivity;
+		data.cam.target += data.cam.up() * deltaY * sensitivity;
 	}
 
-	data.lastCPos = newCPos;
 	this->Refresh();
 }
 
@@ -538,35 +548,71 @@ void PreviewWindow::draw_center_axis()
 	const viewport_camera& cam = get_impl().cam;
 
 	const float axisSize = 60.0F;
-	const float axisSizeHalf = axisSize / 2;
 	const float margin = 15.0F;
-	const float centerX = margin + axisSizeHalf;
-	const float centerY = margin + axisSizeHalf;
+	const float axisSizeHalf = axisSize * 0.5F;
 
-	const glm::vec3 right = cam.right() * axisSizeHalf;
-	const glm::vec3 forward = cam.forward() * -axisSizeHalf;
-	const glm::vec3 up = cam.up() * axisSizeHalf;
+	const glm::vec3 up = cam.up();
+	const glm::vec3 right = cam.right();
+	const glm::vec3 forward = cam.forward();
 
-	glLoadIdentity();
-	glOrtho(0, viewW, 0, viewH, -1, 1);
+	glm::vec3 position = cam.position;
+	position.z = 0.0F;
+
+	const glm::vec2 center(margin + axisSizeHalf, margin + axisSizeHalf);
+
+	const glm::mat4 view = glm::lookAt(position, position + forward, up);
+	const glm::mat4 proj = glm::ortho<float>(0, viewW, 0, viewH, -1, 1);
+	const glm::mat4 projView = proj * view;
+
+	const auto project_to_screen = [&projView, &viewW, &viewH](const glm::vec3& p) -> glm::vec2
+	{
+		const glm::vec4 clip = projView * glm::vec4(p, 1.0F);
+		const float x = (clip.x / clip.w * 0.5F + 0.5F) * viewW;
+		const float y = (clip.y / clip.w * 0.5F + 0.5F) * viewH;
+		return glm::vec2(x, y);
+	};
+
+	// 3D points
+	const glm::vec3 origin(0.0F, 0.0F, 0.0F);
+	const glm::vec3 px(axisSizeHalf, 0.0F, 0.0F);
+	const glm::vec3 py(0.0F, axisSizeHalf, 0.0F);
+	const glm::vec3 pz(0.0F, 0.0F, axisSizeHalf);
+
+	// Projections
+	glm::vec2 screenOrigin = project_to_screen(origin);
+	glm::vec2 screenX = project_to_screen(px);
+	glm::vec2 screenY = project_to_screen(py);
+	glm::vec2 screenZ = project_to_screen(pz);
+
+	// Move to corner
+	{
+		const glm::vec2 offset = center - screenOrigin;
+		screenOrigin += offset;
+		screenX += offset;
+		screenY += offset;
+		screenZ += offset;
+	}
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(&proj[0][0]);
 
 	glLineWidth(2.0F);
 	glBegin(GL_LINES);
 
 	// X (red)
 	glColor3f(1.0F, 0.0F, 0.0F);
-	glVertex2f(centerX, centerY);
-	glVertex2f(centerX - right.x, centerY + right.y);
+	glVertex2f(screenOrigin.x, screenOrigin.y);
+	glVertex2f(screenX.x, screenX.y);
 
 	// Y (green)
 	glColor3f(0.0F, 1.0F, 0.0F);
-	glVertex2f(centerX, centerY);
-	glVertex2f(centerX + up.x, centerY - up.y);
+	glVertex2f(screenOrigin.x, screenOrigin.y);
+	glVertex2f(screenY.x, screenY.y);
 
 	// Z (blue)
 	glColor3f(0.0F, 0.0F, 1.0F);
-	glVertex2f(centerX, centerY);
-	glVertex2f(centerX + forward.x, centerY - forward.y);
+	glVertex2f(screenOrigin.x, screenOrigin.y);
+	glVertex2f(screenZ.x, screenZ.y);
 
 	glEnd();
 }
