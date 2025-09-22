@@ -554,8 +554,6 @@ void PreviewWindow::draw_center_axis()
 	glm::vec3 position = cam.position;
 	position.z = 0.0F;
 
-	const glm::vec2 center(margin + axisSizeHalf, margin + axisSizeHalf);
-
 	const glm::mat4 view = glm::lookAt(position, position + forward, up);
 	const glm::mat4 proj = glm::ortho<float>(0, viewW, 0, viewH, -1, 1);
 	const glm::mat4 projView = proj * view;
@@ -582,7 +580,7 @@ void PreviewWindow::draw_center_axis()
 
 	// Move to corner
 	{
-		const glm::vec2 offset = center - screenOrigin;
+		const glm::vec2 offset = glm::vec2(margin + axisSizeHalf, margin + axisSizeHalf) - screenOrigin;
 		screenOrigin += offset;
 		screenX += offset;
 		screenY += offset;
