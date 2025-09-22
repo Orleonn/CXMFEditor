@@ -9,7 +9,7 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+CXMFWindowBase::CXMFWindowBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxSize( 800,600 ), wxSize( 800,600 ) );
 
@@ -74,14 +74,6 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	bSizer8->Add( m_staticText3, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_textCtrlModelName = new wxTextCtrl( m_ModelPanel_Main, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( 150,-1 ), 0 );
-	#ifdef __WXGTK__
-	if ( !m_textCtrlModelName->HasFlag( wxTE_MULTILINE ) )
-	{
-	m_textCtrlModelName->SetMaxLength( 32 );
-	}
-	#else
-	m_textCtrlModelName->SetMaxLength( 32 );
-	#endif
 	m_textCtrlModelName->SetToolTip( _("Specify the model name.\n\nIf this field is empty, the model will be named as the file.") );
 
 	bSizer8->Add( m_textCtrlModelName, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -124,38 +116,6 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 
 
 	bSizer7->Add( 0, 5, 0, wxEXPAND, 5 );
-
-	wxBoxSizer* bSizer81;
-	bSizer81 = new wxBoxSizer( wxHORIZONTAL );
-
-	wxBoxSizer* bSizer9;
-	bSizer9 = new wxBoxSizer( wxVERTICAL );
-
-	m_staticText6 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Meshes"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText6->Wrap( -1 );
-	bSizer9->Add( m_staticText6, 1, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-
-	m_staticline2 = new wxStaticLine( m_ModelPanel_Main, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
-	bSizer9->Add( m_staticline2, 0, wxEXPAND | wxALL, 5 );
-
-
-	bSizer81->Add( bSizer9, 1, wxEXPAND, 5 );
-
-	wxBoxSizer* bSizer10;
-	bSizer10 = new wxBoxSizer( wxVERTICAL );
-
-	m_staticText5 = new wxStaticText( m_ModelPanel_Main, wxID_ANY, _("Bones"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText5->Wrap( -1 );
-	bSizer10->Add( m_staticText5, 1, wxALL|wxALIGN_CENTER_VERTICAL|wxALIGN_CENTER_HORIZONTAL, 5 );
-
-	m_staticline21 = new wxStaticLine( m_ModelPanel_Main, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
-	bSizer10->Add( m_staticline21, 0, wxEXPAND | wxALL, 5 );
-
-
-	bSizer81->Add( bSizer10, 1, wxEXPAND, 5 );
-
-
-	bSizer7->Add( bSizer81, 0, wxEXPAND, 5 );
 
 	wxBoxSizer* bSizer71;
 	bSizer71 = new wxBoxSizer( wxHORIZONTAL );
@@ -208,21 +168,22 @@ CXMFWindow::CXMFWindow( wxWindow* parent, wxWindowID id, const wxString& title, 
 	this->Centre( wxBOTH );
 
 	// Connect Events
-	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CXMFWindow::onWindowButton_Close ) );
-	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Import ), this, m_menuFileImport->GetId());
-	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Open ), this, m_menuFileOpen->GetId());
-	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Save ), this, m_menuFileSave->GetId());
-	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_File_Exit ), this, m_menuFileExit->GetId());
-	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_Preview ), this, m_menuInfoPreview->GetId());
-	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_About ), this, m_menuInfoAbout->GetId());
-	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindow::onMenuSelect_Info_Github ), this, m_menuInfoGithub->GetId());
+	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( CXMFWindowBase::onWindowButton_Close ) );
+	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_File_Import ), this, m_menuFileImport->GetId());
+	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_File_Open ), this, m_menuFileOpen->GetId());
+	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_File_Save ), this, m_menuFileSave->GetId());
+	m_menuFile->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_File_Exit ), this, m_menuFileExit->GetId());
+	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_Info_Preview ), this, m_menuInfoPreview->GetId());
+	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_Info_About ), this, m_menuInfoAbout->GetId());
+	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_Info_Github ), this, m_menuInfoGithub->GetId());
+	m_textCtrlModelName->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CXMFWindowBase::OnModelNameChange ), NULL, this );
 }
 
-CXMFWindow::~CXMFWindow()
+CXMFWindowBase::~CXMFWindowBase()
 {
 }
 
-CXMFImportDlg::CXMFImportDlg( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+CXMFImportDlgBase::CXMFImportDlgBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxSize( 170,220 ), wxSize( 170,220 ) );
 
@@ -274,9 +235,68 @@ CXMFImportDlg::CXMFImportDlg( wxWindow* parent, wxWindowID id, const wxString& t
 	this->Centre( wxBOTH );
 
 	// Connect Events
-	m_buttonOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFImportDlg::onButton_Ok ), NULL, this );
+	m_buttonOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFImportDlgBase::onButton_Ok ), NULL, this );
 }
 
-CXMFImportDlg::~CXMFImportDlg()
+CXMFImportDlgBase::~CXMFImportDlgBase()
+{
+}
+
+CXMFTextDialogBase::CXMFTextDialogBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxSize( 240,140 ), wxSize( 240,140 ) );
+
+	wxBoxSizer* bSizer11;
+	bSizer11 = new wxBoxSizer( wxVERTICAL );
+
+
+	bSizer11->Add( 0, 5, 0, wxEXPAND, 5 );
+
+	m_TextCap = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_TextCap->Wrap( -1 );
+	bSizer11->Add( m_TextCap, 0, wxALIGN_CENTER|wxALL, 5 );
+
+	wxBoxSizer* bSizer12;
+	bSizer12 = new wxBoxSizer( wxHORIZONTAL );
+
+	m_textCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer12->Add( m_textCtrl, 1, wxALL, 2 );
+
+
+	bSizer11->Add( bSizer12, 0, wxEXPAND, 5 );
+
+
+	bSizer11->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	wxBoxSizer* bSizer14;
+	bSizer14 = new wxBoxSizer( wxHORIZONTAL );
+
+
+	bSizer14->Add( 30, 0, 0, wxEXPAND, 5 );
+
+	m_buttonOk = new wxButton( this, wxID_ANY, _("Ok"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer14->Add( m_buttonOk, 0, wxALL, 5 );
+
+
+	bSizer14->Add( 5, 0, 0, wxEXPAND, 5 );
+
+	m_buttonCancel = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer14->Add( m_buttonCancel, 0, wxALL, 5 );
+
+
+	bSizer11->Add( bSizer14, 1, wxEXPAND, 5 );
+
+
+	this->SetSizer( bSizer11 );
+	this->Layout();
+
+	this->Centre( wxBOTH );
+
+	// Connect Events
+	m_buttonOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFTextDialogBase::OnButton_Ok ), NULL, this );
+	m_buttonCancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFTextDialogBase::OnButton_Cancel ), NULL, this );
+}
+
+CXMFTextDialogBase::~CXMFTextDialogBase()
 {
 }

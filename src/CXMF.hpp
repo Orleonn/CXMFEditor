@@ -41,6 +41,7 @@ constexpr inline uint32_t MAGIC = ((static_cast<uint32_t>('C') << 24) |	 //
 								   static_cast<uint32_t>('F'));
 
 constexpr inline uint32_t NO_PARENT = 0xFFFFFFFFU;
+constexpr inline uint32_t NO_BONE = 0xFFFFFFFFU;
 
 enum HEADER_FLAG : uint32_t
 {
@@ -112,12 +113,15 @@ struct SkinnedMesh
 	float aabbMax[3];
 };
 
-struct Node
+struct Bone
 {
 	std::string name;
 	Mat4x4 inverseBindTransform;
+	uint32_t id;
 	uint32_t parentIndex;
 };
+
+
 
 class StaticModel;
 class SkinnedModel;
@@ -184,7 +188,7 @@ class SkinnedModel final : public IModel
 public:
 	std::string name;
 	std::vector<SkinnedMesh> meshes;
-	std::vector<Node> nodes;
+	std::vector<Bone> bones;
 	std::vector<Mat4x4> boneOffsets;
 	std::unordered_map<std::string, uint32_t> boneMapping;
 	uint32_t version;

@@ -13,19 +13,20 @@
 
 
 
-class CXMFImportDialogWindow final : public CXMFImportDlg
+class CXMFImportDialog final : public CXMFImportDlgBase
 {
 private:
-	using Super = CXMFImportDlg;
+	using Super = CXMFImportDlgBase;
 
 private:
 	void onButton_Ok(wxCommandEvent& event) override;
 
 public:
-	CXMFImportDialogWindow() = delete;
+	CXMFImportDialog() = delete;
 
-	explicit CXMFImportDialogWindow(wxWindow* parent);
-	~CXMFImportDialogWindow();
+	explicit CXMFImportDialog(wxWindow* parent);
+
+	~CXMFImportDialog() = default;
 
 public:
 	bool GSNEnabled() const
@@ -44,28 +45,78 @@ public:
 	}
 };
 
-CXMFImportDialogWindow::CXMFImportDialogWindow(wxWindow* parent)
+CXMFImportDialog::CXMFImportDialog(wxWindow* parent)
 	: Super(parent)
 {
 	//
 }
 
-CXMFImportDialogWindow::~CXMFImportDialogWindow()
+void CXMFImportDialog::onButton_Ok(wxCommandEvent& /* event */)
 {
-	//
-}
-
-void CXMFImportDialogWindow::onButton_Ok(wxCommandEvent& /* event */)
-{
-	this->AcceptAndClose();
+	this->EndDialog(wxID_OK);
 }
 
 
 
-class MainWindow final : public CXMFWindow
+class CXMFTextDialog final : public CXMFTextDialogBase
 {
 private:
-	using Super = CXMFWindow;
+	using Super = CXMFTextDialogBase;
+
+private:
+	void OnButton_Ok(wxCommandEvent& event) override;
+	void OnButton_Cancel(wxCommandEvent& event) override;
+
+public:
+	CXMFTextDialog() = delete;
+
+	explicit CXMFTextDialog(wxWindow* parent, const wxString& title, const wxString& capText = wxEmptyString);
+
+	~CXMFTextDialog() = default;
+
+public:
+	void SetCapText(const wxString& text);
+	void SetCtrlText(const wxString& text);
+	wxString GetCtrlText() const;
+};
+
+CXMFTextDialog::CXMFTextDialog(wxWindow* parent, const wxString& title, const wxString& capText)
+	: Super(parent, wxID_ANY, title)
+{
+	if (!capText.empty()) Super::m_TextCap->SetLabelText(capText);
+}
+
+void CXMFTextDialog::OnButton_Ok(wxCommandEvent& /* event */)
+{
+	this->EndDialog(wxID_OK);
+}
+
+void CXMFTextDialog::OnButton_Cancel(wxCommandEvent& /* event */)
+{
+	this->EndDialog(wxID_CANCEL);
+}
+
+void CXMFTextDialog::SetCapText(const wxString& text)
+{
+	Super::m_TextCap->SetLabelText(text);
+}
+
+void CXMFTextDialog::SetCtrlText(const wxString& text)
+{
+	Super::m_textCtrl->SetValue(text);
+}
+
+wxString CXMFTextDialog::GetCtrlText() const
+{
+	return Super::m_textCtrl->GetValue();
+}
+
+
+
+class MainWindow final : public CXMFWindowBase
+{
+private:
+	using Super = CXMFWindowBase;
 
 private:
 	PreviewWindow* m_PreviewWnd;
@@ -80,9 +131,11 @@ private:
 	void _add_texture_path_field(wxPanel* panel, wxBoxSizer* sizer, const std::string& baseName);
 	void _add_vertex_counter(wxPanel* panel, wxBoxSizer* sizer, size_t vertexCount);
 	void _add_face_counter(wxPanel* panel, wxBoxSizer* sizer, size_t faceCount);
+	void _add_bone_field(wxPanel* panel, wxBoxSizer* sizer, const std::string& baseName, uint32_t parentIndex);
 
 	void _on_mesh_name_text_update(wxCommandEvent& event);
 	void _on_texture_path_text_update(wxCommandEvent& event);
+	void _on_bone_name_change(wxCommandEvent& event);
 
 	void _fill_as_static();
 	void _fill_as_skinned();
@@ -90,6 +143,7 @@ private:
 	void set_total_verticies(size_t count);
 	void set_total_faces(size_t count);
 	void set_status_text(const std::string& text);
+	bool try_save_changes();
 
 	bool has_changes() const
 	{
@@ -114,6 +168,7 @@ private:
 	void onMenuSelect_Info_Preview(wxCommandEvent& event) override;
 	void onMenuSelect_Info_About(wxCommandEvent& event) override;
 	void onMenuSelect_Info_Github(wxCommandEvent& event) override;
+	void OnModelNameChange(wxCommandEvent& event) override;
 
 private:
 	void StartModelImport();
@@ -219,6 +274,46 @@ void MainWindow::_add_face_counter(wxPanel* panel, wxBoxSizer* sizer, size_t fac
 	sizer->Add(faceCapSizer, 0, wxEXPAND, 5);
 }
 
+void MainWindow::_add_bone_field(wxPanel* panel, wxBoxSizer* sizer, const std::string& baseName, uint32_t parentIndex)
+{
+	std::string parentNameText;
+	if (parentIndex == cxmf::NO_PARENT)
+		parentNameText = "NO_PARENT";
+	else
+		parentNameText = "Bone " + std::to_string(parentIndex);
+
+	// Bone name
+	wxBoxSizer* const nameCapSizer = new wxBoxSizer(wxHORIZONTAL);
+	wxStaticText* const nameCapText = new wxStaticText(panel, wxID_ANY, "Name:");
+	nameCapText->Wrap(-1);
+	nameCapSizer->Add(nameCapText, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+	wxStaticText* const nameText = new wxStaticText(panel, 0, baseName);
+	nameCapSizer->Add(nameText, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+	// Parent index name
+	wxBoxSizer* const parentCapSizer = new wxBoxSizer(wxHORIZONTAL);
+	wxStaticText* const parentCapText = new wxStaticText(panel, wxID_ANY, "Parent:");
+	parentCapText->Wrap(-1);
+	parentCapSizer->Add(parentCapText, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+	wxStaticText* const parentText = new wxStaticText(panel, wxID_ANY, parentNameText);
+	parentCapSizer->Add(parentText, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+	// Name changer button
+	wxBoxSizer* const nameChangeBtnSizer = new wxBoxSizer(wxHORIZONTAL);
+	wxButton* const nameChangeBtn = new wxButton(panel, wxID_ANY, "Change bone name");
+	nameChangeBtnSizer->Add(nameChangeBtn, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+	sizer->Add(nameCapSizer, 0, wxEXPAND, 5);
+	sizer->Add(parentCapSizer, 0, wxEXPAND, 5);
+	sizer->Add(nameChangeBtnSizer, 0, wxEXPAND, 5);
+
+	nameChangeBtn->SetClientData(panel);
+	nameChangeBtn->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MainWindow::_on_bone_name_change),  //
+						   nullptr, this);
+}
+
 void MainWindow::_on_mesh_name_text_update(wxCommandEvent& event)
 {
 	wxTextCtrl* const ctrl = wxDynamicCast(event.GetEventObject(), wxTextCtrl);
@@ -263,6 +358,60 @@ void MainWindow::_on_texture_path_text_update(wxCommandEvent& event)
 		m_Model->SkinnedModelCast()->meshes[index].texturesPath = text;
 	}
 	mark_changes();
+}
+
+void MainWindow::_on_bone_name_change(wxCommandEvent& event)
+{
+	wxButton* const btn = wxDynamicCast(event.GetEventObject(), wxButton);
+	if (!btn) return;
+
+	wxPanel* const panel = static_cast<wxPanel*>(btn->GetClientData());
+	const int index = Super::m_listBones->FindPage(panel);
+	if (index == wxNOT_FOUND)  //
+		return;
+
+	cxmf::SkinnedModel& model = *m_Model->SkinnedModelCast();
+	cxmf::Bone& bone = model.bones[index];
+
+	wxStaticText* const panelBoneName = wxDynamicCast(panel->FindItem(0), wxStaticText);
+	if (!panelBoneName)	 //
+		return;
+
+	CXMFTextDialog dialog(this, btn->GetLabelText(), "Enter new name");
+	for (;;)
+	{
+		dialog.SetCtrlText(bone.name);
+		if (dialog.ShowModal() == wxID_CANCEL)	//
+			break;
+
+		std::string newName;
+		{
+			const wxString tmpName = dialog.GetCtrlText();
+			newName = tmpName.c_str();
+		}
+
+		if (newName == bone.name)  //
+			break;
+
+		if (newName.empty())
+		{
+			wxMessageBox("The name must not be empty!", "Error", wxOK | wxCENTRE | wxICON_ERROR, &dialog);
+			continue;
+		}
+
+		if (model.boneMapping.contains(newName))
+		{
+			wxMessageBox("Bone with this name already exists!", "Error", wxOK | wxCENTRE | wxICON_ERROR, &dialog);
+			continue;
+		}
+
+		model.boneMapping.erase(bone.name);
+		model.boneMapping[newName] = bone.id;
+		bone.name = newName;
+		panelBoneName->SetLabelText(newName);
+		mark_changes();
+		break;
+	}
 }
 
 void MainWindow::_fill_as_static()
@@ -325,7 +474,7 @@ void MainWindow::_fill_as_skinned()
 
 	size_t totalVerticies = 0;
 	size_t totalFaces = 0;
-	const std::string pagePrefix = "Mesh ";
+	std::string pagePrefix = "Mesh ";
 	std::string pageName;
 	const uint32_t meshesCount = static_cast<uint32_t>(model.meshes.size());
 	for (uint32_t i_mesh = 0; i_mesh < meshesCount; ++i_mesh)
@@ -352,6 +501,24 @@ void MainWindow::_fill_as_skinned()
 		meshList->AddPage(mainPanel, pageName);
 	}
 
+	pagePrefix = "Bone ";
+	const uint32_t bonesCount = static_cast<uint32_t>(model.bones.size());
+	for (uint32_t i_bone = 0; i_bone < bonesCount; ++i_bone)
+	{
+		pageName = pagePrefix + std::to_string(i_bone);
+		const cxmf::Bone& node = model.bones[i_bone];
+
+		wxPanel* const mainPanel = new wxPanel(boneList);
+		wxBoxSizer* const mainSizer = new wxBoxSizer(wxVERTICAL);
+
+		_add_bone_field(mainPanel, mainSizer, node.name, node.parentIndex);
+
+		mainPanel->SetSizer(mainSizer);
+		mainPanel->Layout();
+		mainSizer->Fit(mainPanel);
+		boneList->AddPage(mainPanel, pageName);
+	}
+
 	set_total_verticies(totalVerticies);
 	set_total_faces(totalFaces);
 }
@@ -371,6 +538,21 @@ void MainWindow::set_total_faces(size_t count)
 void MainWindow::set_status_text(const std::string& text)
 {
 	Super::m_statusBar->SetStatusText(text);
+}
+
+bool MainWindow::try_save_changes()
+{
+	if (m_Model && has_changes())
+	{
+		const char* const msg = "You have an unsaved model.\nDo you want to save it?";
+		const int result = wxMessageBox(msg, "Warning", wxYES_NO | wxCANCEL | wxCENTRE | wxICON_WARNING, this);
+		if (result == wxCANCEL)	 //
+			return false;
+
+		if (result == wxYES)  //
+			StartModelSave();
+	}
+	return true;
 }
 
 void MainWindow::Reset()
@@ -455,8 +637,47 @@ void MainWindow::onMenuSelect_Info_Github(wxCommandEvent& /* event */)
 	wxLaunchDefaultBrowser("https://github.com/Orleonn/CXMFEditor");
 }
 
+void MainWindow::OnModelNameChange(wxCommandEvent& event)
+{
+	if (!m_Model)
+	{
+		event.Skip();
+		return;
+	}
+
+	std::string* name = nullptr;
+	if (m_Model->StaticModelCast() != nullptr)
+	{
+		name = &m_Model->StaticModelCast()->name;
+	}
+	else
+	{
+		name = &m_Model->SkinnedModelCast()->name;
+	}
+
+	std::string newName;
+	{
+		const wxString tmpStr = Super::m_textCtrlModelName->GetValue();
+		newName = tmpStr.c_str();
+	}
+
+	if (newName.empty())
+	{
+		Super::m_textCtrlModelName->ChangeValue(*name);
+		Super::m_textCtrlModelName->SetInsertionPoint(-1);
+	}
+	else
+	{
+		*name = newName;
+		mark_changes();
+	}
+}
+
 void MainWindow::StartModelImport()
 {
+	if (!try_save_changes())  //
+		return;
+
 	wxFileDialog dialog(this, "Import model", wxEmptyString, wxEmptyString,	 //
 						"(*.gltf;*.fbx)|*.gltf;*.fbx",						 //
 						wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -464,7 +685,7 @@ void MainWindow::StartModelImport()
 	if (dialog.ShowModal() == wxID_CANCEL)	//
 		return;
 
-	CXMFImportDialogWindow settingsDlg(this);
+	CXMFImportDialog settingsDlg(this);
 	if (settingsDlg.ShowModal() == wxID_CANCEL)	 //
 		return;
 
@@ -500,6 +721,9 @@ void MainWindow::StartModelImport()
 
 void MainWindow::StartModelOpen()
 {
+	if (!try_save_changes())  //
+		return;
+
 	wxFileDialog dialog(this, "Open model", wxEmptyString, wxEmptyString,  //
 						"CXM Format (*.cxm)|*.cxm",						   //
 						wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -575,18 +799,8 @@ void MainWindow::StartModelSave()
 
 void MainWindow::StartClosing()
 {
-	if (m_Model && has_changes())
-	{
-		const char* const msg = "You have an unsaved model.\nDo you want to save it?";
-		const int result = wxMessageBox(msg, "Warning", wxYES_NO | wxCANCEL | wxCENTRE | wxICON_WARNING, this);
-		if (result == wxCANCEL)	 //
-			return;
-
-		if (result == wxYES)  //
-			StartModelSave();
-	}
-
-	Close(true);
+	if (try_save_changes())	 //
+		Close(true);
 }
 
 

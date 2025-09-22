@@ -1,6 +1,7 @@
 
 #include "CXMF.hpp"
 
+#include <list>
 #include <limits>
 #include <fstream>
 #include <memory>
@@ -108,30 +109,30 @@ static inline std::istream& operator>>(std::istream& _In, cxmf::SkinnedMesh& mes
 	return _In;
 }
 
-// cxmf::Node
+// cxmf::Bone
 
-static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::Node& node)
+static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::Bone& bone)
 {
-	const uint32_t nameLen = static_cast<uint32_t>(node.name.length());
+	const uint32_t nameLen = static_cast<uint32_t>(bone.name.length());
 
 	_Out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
-	_Out.write(node.name.c_str(), node.name.length());
-	_Out.write(reinterpret_cast<const char*>(&node.inverseBindTransform[0]), sizeof(cxmf::Mat4x4));
-	_Out.write(reinterpret_cast<const char*>(&node.parentIndex), sizeof(uint32_t));
+	_Out.write(bone.name.c_str(), bone.name.length());
+	_Out.write(reinterpret_cast<const char*>(&bone.inverseBindTransform[0]), sizeof(cxmf::Mat4x4));
+	_Out.write(reinterpret_cast<const char*>(&bone.parentIndex), sizeof(uint32_t));
 	return _Out;
 }
 
-static inline std::istream& operator>>(std::istream& _In, cxmf::Node& node)
+static inline std::istream& operator>>(std::istream& _In, cxmf::Bone& bone)
 {
 	uint32_t nameLen = 0;
 
 	_In.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
 
-	node.name.resize(nameLen, '\0');
+	bone.name.resize(nameLen, '\0');
 
-	_In.read(node.name.data(), nameLen);
-	_In.read(reinterpret_cast<char*>(&node.inverseBindTransform[0]), sizeof(cxmf::Mat4x4));
-	_In.read(reinterpret_cast<char*>(&node.parentIndex), sizeof(uint32_t));
+	_In.read(bone.name.data(), nameLen);
+	_In.read(reinterpret_cast<char*>(&bone.inverseBindTransform[0]), sizeof(cxmf::Mat4x4));
+	_In.read(reinterpret_cast<char*>(&bone.parentIndex), sizeof(uint32_t));
 	return _In;
 }
 
@@ -183,12 +184,10 @@ static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::SkinnedMo
 {
 	const uint32_t nameLen = static_cast<uint32_t>(model.name.length());
 	const uint32_t meshesCount = static_cast<uint32_t>(model.meshes.size());
-	const uint32_t nodesCount = static_cast<uint32_t>(model.nodes.size());
-	const uint32_t bonesCount = static_cast<uint32_t>(model.boneMapping.size());
+	const uint32_t bonesCount = static_cast<uint32_t>(model.bones.size());
 
 	_Out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
 	_Out.write(reinterpret_cast<const char*>(&meshesCount), sizeof(uint32_t));
-	_Out.write(reinterpret_cast<const char*>(&nodesCount), sizeof(uint32_t));
 	_Out.write(reinterpret_cast<const char*>(&bonesCount), sizeof(uint32_t));
 	_Out.write(model.name.c_str(), model.name.length());
 
@@ -196,20 +195,12 @@ static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::SkinnedMo
 	{
 		_Out << model.meshes[i];
 	}
-	for (uint32_t i = 0; i < nodesCount; ++i)
+	for (uint32_t i = 0; i < bonesCount; ++i)
 	{
-		_Out << model.nodes[i];
+		_Out << model.bones[i];
 	}
 
 	_Out.write(reinterpret_cast<const char*>(model.boneOffsets.data()), bonesCount * sizeof(cxmf::Mat4x4));
-
-	for (const auto& bone : model.boneMapping)
-	{
-		const uint32_t len = static_cast<uint32_t>(bone.first.length());
-		_Out.write(reinterpret_cast<const char*>(&len), sizeof(uint32_t));
-		_Out.write(bone.first.c_str(), bone.first.length());
-		_Out.write(reinterpret_cast<const char*>(&bone.second), sizeof(uint32_t));
-	}
 	return _Out;
 }
 
@@ -217,17 +208,15 @@ static inline std::istream& operator>>(std::istream& _In, cxmf::SkinnedModel& mo
 {
 	uint32_t nameLen = 0;
 	uint32_t meshesCount = 0;
-	uint32_t nodesCount = 0;
 	uint32_t bonesCount = 0;
 
 	_In.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
 	_In.read(reinterpret_cast<char*>(&meshesCount), sizeof(uint32_t));
-	_In.read(reinterpret_cast<char*>(&nodesCount), sizeof(uint32_t));
 	_In.read(reinterpret_cast<char*>(&bonesCount), sizeof(uint32_t));
 
 	model.name.resize(nameLen, '\0');
 	model.meshes.resize(meshesCount);
-	model.nodes.resize(nodesCount);
+	model.bones.resize(bonesCount);
 	model.boneOffsets.resize(bonesCount);
 	model.boneMapping.reserve(bonesCount);
 
@@ -237,26 +226,17 @@ static inline std::istream& operator>>(std::istream& _In, cxmf::SkinnedModel& mo
 	{
 		_In >> model.meshes[i];
 	}
-	for (uint32_t i = 0; i < nodesCount; ++i)
+	for (uint32_t i = 0; i < bonesCount; ++i)
 	{
-		_In >> model.nodes[i];
+		cxmf::Bone& bone = model.bones[i];
+
+		_In >> bone;
+
+		bone.id = i;
+		model.boneMapping[bone.name] = i;
 	}
 
 	_In.read(reinterpret_cast<char*>(model.boneOffsets.data()), bonesCount * sizeof(cxmf::Mat4x4));
-
-	std::string boneName;
-	for (uint32_t i = 0; i < bonesCount; ++i)
-	{
-		uint32_t len = 0;
-		uint32_t boneIndex = 0;
-		_In.read(reinterpret_cast<char*>(&len), sizeof(uint32_t));
-
-		boneName.resize(len, '\0');
-		_In.read(boneName.data(), len);
-		_In.read(reinterpret_cast<char*>(&boneIndex), sizeof(uint32_t));
-
-		model.boneMapping[boneName] = boneIndex;
-	}
 	return _In;
 }
 
@@ -393,41 +373,55 @@ static StaticModel* import_static_model(const aiScene& scene, ImportModelInfo& i
 
 
 
-static void parse_skinned_nodes(std::vector<Node>& nodes, const aiScene& scene)
+static uint32_t add_bone(SkinnedModel& model, std::list<Bone>& bones, const aiBone& bone, const aiScene& scene)
 {
-	using queue_node_t = std::vector<std::pair<const aiNode*, uint32_t>>;
-
-	queue_node_t queueNodes;
-	queueNodes.emplace_back(scene.mRootNode, NO_PARENT);
-	do
+	const std::string boneName = bone.mName.C_Str();
 	{
-		const aiNode& root = *queueNodes.back().first;
-		const uint32_t parentIndex = queueNodes.back().second;
-		queueNodes.pop_back();
+		const auto _It = model.boneMapping.find(boneName);
+		if (_It != model.boneMapping.end())	 //
+			return _It->second;
+	}
 
-		const uint32_t currentIndex = static_cast<uint32_t>(nodes.size());
-		Node& node = nodes.emplace_back();
-		node.name = root.mName.C_Str();
-		node.parentIndex = parentIndex;
-		assimp_matrix_to_cxmf(node.inverseBindTransform, root.mTransformation);
+	const aiNode& boneNode = *bone.mNode;
+	const uint32_t boneIndex = static_cast<uint32_t>(bones.size());
+	model.boneMapping[boneName] = boneIndex;
+	assimp_matrix_to_cxmf(model.boneOffsets.emplace_back(), bone.mOffsetMatrix);
 
-		uint32_t childCount = root.mNumChildren;
-		while (childCount > 0)
+	Bone& newBone = bones.emplace_back();
+	newBone.name = boneName;
+	assimp_matrix_to_cxmf(newBone.inverseBindTransform, boneNode.mTransformation);
+	newBone.id = boneIndex;
+	if (boneNode.mParent == nullptr)
+	{
+		newBone.parentIndex = NO_PARENT;
+	}
+	else
+	{
+		const aiBone* const parentBone = scene.findBone(boneNode.mParent->mName);
+		if (parentBone == nullptr)
 		{
-			--childCount;
-			queueNodes.emplace_back(root.mChildren[childCount], currentIndex);
+			newBone.parentIndex = NO_PARENT;
 		}
-	} while (!queueNodes.empty());
+		else
+		{
+			newBone.parentIndex = add_bone(model, bones, *parentBone, scene);
+			if (newBone.parentIndex == newBone.id)
+			{
+				newBone.parentIndex = NO_PARENT;
+			}
+		}
+	}
+	return boneIndex;
 }
 
 static SkinnedModel* import_skinned_model(const aiScene& scene, ImportModelInfo& importInfo)
 {
 	SkinnedModel* const model = new SkinnedModel();
+	std::list<Bone> tempBones;
 
 	model->name = importInfo.modelName;
 	model->version = CXMF_VERSION;
 	model->flags = (HEADER_FLAG_SKINNED | importInfo.flags);
-	parse_skinned_nodes(model->nodes, scene);
 
 	model->meshes.resize(scene.mNumMeshes);
 	std::string tmpBoneName;
@@ -451,13 +445,7 @@ static SkinnedModel* import_skinned_model(const aiScene& scene, ImportModelInfo&
 		// Bones
 		for (uint32_t i_bone = 0; i_bone < sceneMesh.mNumBones; ++i_bone)
 		{
-			const aiBone& meshBone = *sceneMesh.mBones[i_bone];
-			tmpBoneName = meshBone.mName.C_Str();
-			if (!model->boneMapping.contains(tmpBoneName))
-			{
-				model->boneMapping[tmpBoneName] = static_cast<uint32_t>(model->boneOffsets.size());
-				assimp_matrix_to_cxmf(model->boneOffsets.emplace_back(), meshBone.mOffsetMatrix);
-			}
+			add_bone(*model, tempBones, *sceneMesh.mBones[i_bone], scene);
 		}
 
 		// Verticies
@@ -473,6 +461,12 @@ static SkinnedModel* import_skinned_model(const aiScene& scene, ImportModelInfo&
 				vert.position[i] = position[i];
 				vert.normal[i] = normal[i];
 				vert.tangent[i] = tangent[i];
+			}
+
+			for (int i = 0; i < 4; ++i)
+			{
+				vert.boneID[i] = NO_BONE;
+				vert.weight[i] = 0.0F;
 			}
 
 			if (hasTextureCoords)
@@ -554,6 +548,11 @@ static SkinnedModel* import_skinned_model(const aiScene& scene, ImportModelInfo&
 			}
 		}
 	}
+
+	model->bones.reserve(tempBones.size());
+	for (Bone& b : tempBones)
+		model->bones.push_back(std::move(b));
+
 	return model;
 }
 

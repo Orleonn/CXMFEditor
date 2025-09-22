@@ -22,9 +22,9 @@
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/sizer.h>
-#include <wx/statline.h>
 #include <wx/listbook.h>
 #include <wx/listctrl.h>
+#include <wx/statline.h>
 #include <wx/panel.h>
 #include <wx/notebook.h>
 #include <wx/statusbr.h>
@@ -37,9 +37,9 @@
 ///////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class CXMFWindow
+/// Class CXMFWindowBase
 ///////////////////////////////////////////////////////////////////////////////
-class CXMFWindow : public wxFrame
+class CXMFWindowBase : public wxFrame
 {
 	private:
 
@@ -57,10 +57,6 @@ class CXMFWindow : public wxFrame
 		wxStaticText* m_TextTotalVerts;
 		wxStaticText* m_staticText71;
 		wxStaticText* m_TextTotalFaces;
-		wxStaticText* m_staticText6;
-		wxStaticLine* m_staticline2;
-		wxStaticText* m_staticText5;
-		wxStaticLine* m_staticline21;
 		wxListbook* m_listMesh;
 		wxStaticLine* m_staticline1;
 		wxListbook* m_listBones;
@@ -75,20 +71,21 @@ class CXMFWindow : public wxFrame
 		virtual void onMenuSelect_Info_Preview( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_Info_About( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_Info_Github( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnModelNameChange( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
 
-		CXMFWindow( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("CXMF Editor"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 800,600 ), long style = wxCAPTION|wxCLOSE_BOX|wxMINIMIZE_BOX|wxTAB_TRAVERSAL );
+		CXMFWindowBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("CXMF Editor"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 800,600 ), long style = wxCAPTION|wxCLOSE_BOX|wxMINIMIZE_BOX|wxTAB_TRAVERSAL );
 
-		~CXMFWindow();
+		~CXMFWindowBase();
 
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class CXMFImportDlg
+/// Class CXMFImportDlgBase
 ///////////////////////////////////////////////////////////////////////////////
-class CXMFImportDlg : public wxDialog
+class CXMFImportDlgBase : public wxDialog
 {
 	private:
 
@@ -105,9 +102,35 @@ class CXMFImportDlg : public wxDialog
 
 	public:
 
-		CXMFImportDlg( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Import Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 170,220 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
+		CXMFImportDlgBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Import Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 170,220 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
 
-		~CXMFImportDlg();
+		~CXMFImportDlgBase();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class CXMFTextDialogBase
+///////////////////////////////////////////////////////////////////////////////
+class CXMFTextDialogBase : public wxDialog
+{
+	private:
+
+	protected:
+		wxStaticText* m_TextCap;
+		wxTextCtrl* m_textCtrl;
+		wxButton* m_buttonOk;
+		wxButton* m_buttonCancel;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnButton_Ok( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_Cancel( wxCommandEvent& event ) { event.Skip(); }
+
+
+	public:
+
+		CXMFTextDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 240,140 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
+
+		~CXMFTextDialogBase();
 
 };
 
