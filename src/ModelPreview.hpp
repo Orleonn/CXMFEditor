@@ -2,7 +2,7 @@
 
 #include "CXMF.hpp"
 
-#include <wx/glcanvas.h>
+#include "wx/glcanvas.h"
 
 
 

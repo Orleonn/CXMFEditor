@@ -3,6 +3,7 @@
 #ifndef WX_PRECOMP
 	#include "wx/wx.h"
 #endif
+#include "wx/clipbrd.h"
 
 #include "CXMFEditor.h"
 #include "CXMF.hpp"
@@ -113,6 +114,60 @@ wxString CXMFTextDialog::GetCtrlText() const
 
 
 
+class CXMFModelDumpDlg final : public CXMFModelDumpDlgBase
+{
+private:
+	using Super = CXMFModelDumpDlgBase;
+
+private:
+	void OnButton_Ok(wxCommandEvent& event) override;
+	void OnButton_Copy(wxCommandEvent& event) override;
+
+public:
+	CXMFModelDumpDlg() = delete;
+
+	explicit CXMFModelDumpDlg(wxWindow* parent);
+
+	~CXMFModelDumpDlg() = default;
+
+public:
+	void DumpModel(const cxmf::IModel& iModel);
+};
+
+CXMFModelDumpDlg::CXMFModelDumpDlg(wxWindow* parent)
+	: Super(parent)
+{
+	//
+}
+
+void CXMFModelDumpDlg::OnButton_Ok(wxCommandEvent& event)
+{
+	this->EndDialog(wxID_OK);
+}
+
+void CXMFModelDumpDlg::OnButton_Copy(wxCommandEvent& /* event */)
+{
+	if (wxTheClipboard->Open())
+	{
+		wxTheClipboard->Clear();
+
+		wxTextDataObject* const data = new wxTextDataObject(Super::m_textCtrl->GetValue());
+		if (wxTheClipboard->SetData(data))
+		{
+			wxMessageBox("Copied!", "Success", wxOK | wxCENTRE | wxICON_INFORMATION, this);
+		}
+		wxTheClipboard->Close();
+	}
+}
+
+void CXMFModelDumpDlg::DumpModel(const cxmf::IModel& iModel)
+{
+	Super::m_textCtrl->SetValue(cxmf::DumpModel(iModel));
+	ShowModal();
+}
+
+
+
 class MainWindow final : public CXMFWindowBase
 {
 private:
@@ -169,6 +224,7 @@ private:
 	void onMenuSelect_Info_About(wxCommandEvent& event) override;
 	void onMenuSelect_Info_Github(wxCommandEvent& event) override;
 	void OnModelNameChange(wxCommandEvent& event) override;
+	void OnButton_DumpModel(wxCommandEvent& event) override;
 
 private:
 	void StartModelImport();
@@ -661,6 +717,9 @@ void MainWindow::OnModelNameChange(wxCommandEvent& event)
 		newName = tmpStr.c_str();
 	}
 
+	if (newName == *name)  //
+		return;
+
 	if (newName.empty())
 	{
 		Super::m_textCtrlModelName->ChangeValue(*name);
@@ -670,6 +729,19 @@ void MainWindow::OnModelNameChange(wxCommandEvent& event)
 	{
 		*name = newName;
 		mark_changes();
+	}
+}
+
+void MainWindow::OnButton_DumpModel(wxCommandEvent& event)
+{
+	if (m_Model)
+	{
+		CXMFModelDumpDlg dialog(this);
+		dialog.DumpModel(*m_Model);
+	}
+	else
+	{
+		event.Skip();
 	}
 }
 

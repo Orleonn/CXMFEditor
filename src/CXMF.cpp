@@ -4,6 +4,7 @@
 #include <list>
 #include <limits>
 #include <fstream>
+#include <sstream>
 #include <memory>
 #include <filesystem>
 #include <algorithm>
@@ -730,6 +731,242 @@ bool SaveModel(const std::string& filePath, IModel& model, std::string& err)
 	{
 		return save_model_impl(file, filePath, *model.StaticModelCast());
 	}
+}
+
+
+
+static std::string dump_header_model(const std::string& modelName, uint32_t version, bool skinned)
+{
+	uint32_t major, minor, patch;
+	decode_version(version, major, minor, patch);
+	return std::format("Model: {}, skinned: {}, version: {}.{}.{}",	 //
+					   modelName, (skinned ? "ON" : "OFF"), major, minor, patch);
+}
+
+static std::string dump_aabb(const float* aabbMin, const float* aabbMax)
+{
+	return std::format("AABB: min({}, {}, {}), max({}, {}, {})",  //
+					   aabbMin[0], aabbMin[1], aabbMin[2],		  //
+					   aabbMax[0], aabbMax[1], aabbMax[2]);
+}
+
+static std::string dump_bone_parent(const std::vector<Bone>& bones, uint32_t parentIndex)
+{
+	if (parentIndex == NO_PARENT)  //
+		return "NO_PARENT";
+	return bones[parentIndex].name;
+}
+
+static std::vector<std::string> dump_matrix(const Mat4x4& mat)
+{
+	std::vector<std::string> res;
+	res.reserve(4);
+	std::string tmp;
+	for (int row = 0; row < 4; ++row)
+	{
+		tmp.clear();
+		tmp += "[";
+		for (int col = 0; col < 4; ++col)
+		{
+			tmp += std::format("{:.6f}", mat[col * 4 + row]);
+			if (col < 3)  //
+				tmp += " ";
+		}
+		tmp += "]";
+		res.push_back(tmp);
+	}
+	return res;
+}
+
+static std::string dump_static_model(const StaticModel& model)
+{
+	std::string indents;
+	const auto add_indent = [&indents]() -> void
+	{
+		indents.push_back('\t');
+	};
+	const auto remove_indent = [&indents]() -> void
+	{
+		indents.pop_back();
+	};
+
+
+
+	std::stringstream buf;
+	buf << dump_header_model(model.name, model.version, false) << "\n\n";
+
+	buf << dump_aabb(model.aabbMin, model.aabbMax) << "\n\n";
+
+	for (size_t i_mesh = 0; i_mesh < model.meshes.size(); ++i_mesh)
+	{
+		const Mesh& mesh = model.meshes[i_mesh];
+		buf << std::format("Mesh {}: {}, verticies: {}, faces: {}",	 //
+						   i_mesh, mesh.name, mesh.vertices.size(), (mesh.indices.size() / 3));
+		buf << "\n";
+
+		add_indent();
+		buf << indents << "Texture path: " << (mesh.texturesPath.empty() ? "NO_PATH" : mesh.texturesPath) << "\n";
+		buf << indents << dump_aabb(mesh.aabbMin, mesh.aabbMax) << "\n\n";
+
+		for (size_t i_vert = 0; i_vert < mesh.vertices.size(); ++i_vert)
+		{
+			const Vertex& vert = mesh.vertices[i_vert];
+
+			const std::string pos = std::format("position({}, {}, {})", vert.position[0], vert.position[1], vert.position[2]);
+			const std::string norm = std::format("normal({}, {}, {})", vert.normal[0], vert.normal[1], vert.normal[2]);
+			const std::string uv = std::format("uv({}, {})", vert.uv[0], vert.uv[1]);
+			const std::string tan = std::format("tangent({}, {}, {})", vert.tangent[0], vert.tangent[1], vert.tangent[2]);
+
+			buf << indents << "Vertex " << i_vert << ":\n";
+			add_indent();
+			buf << indents << pos << "\n";
+			buf << indents << norm << "\n";
+			buf << indents << uv << "\n";
+			buf << indents << tan << "\n";
+			remove_indent();
+			buf << "\n";
+		}
+
+		for (size_t i_face = 0; i_face < mesh.indices.size(); i_face += 3)
+		{
+			const uint32_t idx1 = mesh.indices[i_face];
+			const uint32_t idx2 = mesh.indices[i_face + 1];
+			const uint32_t idx3 = mesh.indices[i_face + 2];
+
+			buf << indents << "Face " << (i_face / 3) << ": ";
+			buf << std::format("[{} {} {}]", idx1, idx2, idx3) << "\n";
+		}
+
+		remove_indent();
+		buf << "\n";
+	}
+	return buf.str();
+}
+
+static std::string dump_skinned_model(const SkinnedModel& model)
+{
+	std::string indents;
+	const auto add_indent = [&indents]() -> void
+	{
+		indents.push_back('\t');
+	};
+	const auto remove_indent = [&indents]() -> void
+	{
+		indents.pop_back();
+	};
+
+
+
+	std::stringstream buf;
+	buf << dump_header_model(model.name, model.version, true) << "\n\n";
+
+	for (size_t i_mesh = 0; i_mesh < model.meshes.size(); ++i_mesh)
+	{
+		const SkinnedMesh& mesh = model.meshes[i_mesh];
+		buf << std::format("Mesh {}: {}, verticies: {}, faces: {}",	 //
+						   i_mesh, mesh.name, mesh.vertices.size(), (mesh.indices.size() / 3));
+		buf << "\n";
+
+		add_indent();
+		buf << indents << "Texture path: " << (mesh.texturesPath.empty() ? "NO_PATH" : mesh.texturesPath) << "\n";
+		buf << indents << dump_aabb(mesh.aabbMin, mesh.aabbMax) << "\n\n";
+
+		for (size_t i_vert = 0; i_vert < mesh.vertices.size(); ++i_vert)
+		{
+			const WeightedVertex& vert = mesh.vertices[i_vert];
+
+			const std::string pos = std::format("position({}, {}, {})", vert.position[0], vert.position[1], vert.position[2]);
+			const std::string norm = std::format("normal({}, {}, {})", vert.normal[0], vert.normal[1], vert.normal[2]);
+			const std::string uv = std::format("uv({}, {})", vert.uv[0], vert.uv[1]);
+			const std::string tan = std::format("tangent({}, {}, {})", vert.tangent[0], vert.tangent[1], vert.tangent[2]);
+			std::string boneIDs = "boneID[";
+			std::string weights = "weight[";
+			for (int i = 0; i < 4; ++i)
+			{
+				if (vert.boneID[i] != NO_BONE)
+					boneIDs += model.bones[vert.boneID[i]].name;
+				else
+					boneIDs += "NO_BONE";
+				weights += std::to_string(vert.weight[i]);
+
+				if (i < 3)
+				{
+					boneIDs += ", ";
+					weights += ", ";
+				}
+				else
+				{
+					boneIDs += "]";
+					weights += "]";
+				}
+			}
+
+			buf << indents << "Vertex " << i_vert << ":\n";
+			add_indent();
+			buf << indents << pos << "\n";
+			buf << indents << norm << "\n";
+			buf << indents << uv << "\n";
+			buf << indents << tan << "\n";
+			buf << indents << boneIDs << "\n";
+			buf << indents << weights << "\n";
+			remove_indent();
+			buf << "\n";
+		}
+
+		for (size_t i_face = 0; i_face < mesh.indices.size(); i_face += 3)
+		{
+			const uint32_t idx1 = mesh.indices[i_face];
+			const uint32_t idx2 = mesh.indices[i_face + 1];
+			const uint32_t idx3 = mesh.indices[i_face + 2];
+
+			buf << indents << "Face " << (i_face / 3) << ": ";
+			buf << std::format("[{} {} {}]", idx1, idx2, idx3) << "\n";
+		}
+
+		remove_indent();
+		buf << "\n";
+	}
+
+	buf << "\n";
+
+	for (size_t i_bone = 0; i_bone < model.bones.size(); ++i_bone)
+	{
+		const Bone& bone = model.bones[i_bone];
+		const std::vector<std::string> iBTStrings = dump_matrix(bone.inverseBindTransform);
+		const std::vector<std::string> boneOffsetsStrings = dump_matrix(model.boneOffsets[i_bone]);
+		buf << std::format("Bone {}: {}, parent: {}", i_bone, bone.name, dump_bone_parent(model.bones, bone.parentIndex));
+		buf << "\n";
+
+		add_indent();
+
+		buf << indents << "inverseBindTransform:\n";
+		add_indent();
+		for (int i = 0; i < 4; ++i)
+			buf << indents << iBTStrings[i] << "\n";
+		buf << "\n";
+		remove_indent();
+
+		buf << indents << "boneOffset:\n";
+		add_indent();
+		for (int i = 0; i < 4; ++i)
+			buf << indents << boneOffsetsStrings[i] << "\n";
+		buf << "\n";
+		remove_indent();
+
+		remove_indent();
+		buf << "\n";
+	}
+	return buf.str();
+}
+
+std::string DumpModel(const IModel& model)
+{
+	if (model.StaticModelCast() != nullptr)
+		return dump_static_model(*model.StaticModelCast());
+	else if (model.SkinnedModelCast() != nullptr)
+		return dump_skinned_model(*model.SkinnedModelCast());
+	else
+		return std::string();
 }
 
 _CXMF_END

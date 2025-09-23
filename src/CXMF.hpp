@@ -224,4 +224,6 @@ extern IModel* OpenModel(const std::string& filePath, std::string& err);
 
 extern bool SaveModel(const std::string& filePath, IModel& model, std::string& err);
 
+extern std::string DumpModel(const IModel& model);
+
 _CXMF_END

@@ -114,8 +114,16 @@ CXMFWindowBase::CXMFWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 
 	bSizer7->Add( bSizer8, 0, wxEXPAND, 5 );
 
+	wxBoxSizer* bSizer11;
+	bSizer11 = new wxBoxSizer( wxVERTICAL );
 
-	bSizer7->Add( 0, 5, 0, wxEXPAND, 5 );
+	m_button4 = new wxButton( m_ModelPanel_Main, wxID_ANY, _("Dump"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_button4->SetToolTip( _("Show full model information.") );
+
+	bSizer11->Add( m_button4, 0, wxALIGN_RIGHT|wxALL, 5 );
+
+
+	bSizer7->Add( bSizer11, 0, wxEXPAND, 5 );
 
 	wxBoxSizer* bSizer71;
 	bSizer71 = new wxBoxSizer( wxHORIZONTAL );
@@ -177,6 +185,7 @@ CXMFWindowBase::CXMFWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_Info_About ), this, m_menuInfoAbout->GetId());
 	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_Info_Github ), this, m_menuInfoGithub->GetId());
 	m_textCtrlModelName->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CXMFWindowBase::OnModelNameChange ), NULL, this );
+	m_button4->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFWindowBase::OnButton_DumpModel ), NULL, this );
 }
 
 CXMFWindowBase::~CXMFWindowBase()
@@ -298,5 +307,48 @@ CXMFTextDialogBase::CXMFTextDialogBase( wxWindow* parent, wxWindowID id, const w
 }
 
 CXMFTextDialogBase::~CXMFTextDialogBase()
+{
+}
+
+CXMFModelDumpDlgBase::CXMFModelDumpDlgBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxSize( -1,-1 ), wxSize( -1,-1 ) );
+
+	wxBoxSizer* bSizer12;
+	bSizer12 = new wxBoxSizer( wxVERTICAL );
+
+	wxBoxSizer* bSizer14;
+	bSizer14 = new wxBoxSizer( wxVERTICAL );
+
+	m_textCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE|wxTE_READONLY );
+	bSizer14->Add( m_textCtrl, 1, wxALL|wxEXPAND, 10 );
+
+
+	bSizer12->Add( bSizer14, 1, wxEXPAND, 5 );
+
+	wxBoxSizer* bSizer15;
+	bSizer15 = new wxBoxSizer( wxHORIZONTAL );
+
+	m_button = new wxButton( this, wxID_ANY, _("Ok"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer15->Add( m_button, 1, wxALL, 5 );
+
+	m_button2 = new wxButton( this, wxID_ANY, _("Copy"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer15->Add( m_button2, 1, wxALIGN_CENTER|wxALL, 5 );
+
+
+	bSizer12->Add( bSizer15, 0, wxEXPAND, 5 );
+
+
+	this->SetSizer( bSizer12 );
+	this->Layout();
+
+	this->Centre( wxBOTH );
+
+	// Connect Events
+	m_button->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFModelDumpDlgBase::OnButton_Ok ), NULL, this );
+	m_button2->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFModelDumpDlgBase::OnButton_Copy ), NULL, this );
+}
+
+CXMFModelDumpDlgBase::~CXMFModelDumpDlgBase()
 {
 }

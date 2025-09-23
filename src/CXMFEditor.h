@@ -22,6 +22,7 @@
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/sizer.h>
+#include <wx/button.h>
 #include <wx/listbook.h>
 #include <wx/listctrl.h>
 #include <wx/statline.h>
@@ -31,7 +32,6 @@
 #include <wx/frame.h>
 #include <wx/checkbox.h>
 #include <wx/slider.h>
-#include <wx/button.h>
 #include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -57,6 +57,7 @@ class CXMFWindowBase : public wxFrame
 		wxStaticText* m_TextTotalVerts;
 		wxStaticText* m_staticText71;
 		wxStaticText* m_TextTotalFaces;
+		wxButton* m_button4;
 		wxListbook* m_listMesh;
 		wxStaticLine* m_staticline1;
 		wxListbook* m_listBones;
@@ -72,6 +73,7 @@ class CXMFWindowBase : public wxFrame
 		virtual void onMenuSelect_Info_About( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_Info_Github( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnModelNameChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_DumpModel( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
@@ -131,6 +133,31 @@ class CXMFTextDialogBase : public wxDialog
 		CXMFTextDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 240,140 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
 
 		~CXMFTextDialogBase();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class CXMFModelDumpDlgBase
+///////////////////////////////////////////////////////////////////////////////
+class CXMFModelDumpDlgBase : public wxDialog
+{
+	private:
+
+	protected:
+		wxTextCtrl* m_textCtrl;
+		wxButton* m_button;
+		wxButton* m_button2;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnButton_Ok( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_Copy( wxCommandEvent& event ) { event.Skip(); }
+
+
+	public:
+
+		CXMFModelDumpDlgBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Model Dump"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 680,640 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
+
+		~CXMFModelDumpDlgBase();
 
 };
 
