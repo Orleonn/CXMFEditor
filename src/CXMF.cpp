@@ -241,6 +241,185 @@ static inline std::istream& operator>>(std::istream& _In, cxmf::SkinnedModel& mo
 	return _In;
 }
 
+// cxmf::AnimPositionKey
+
+static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::AnimPositionKey& key)
+{
+	_Out.write(reinterpret_cast<const char*>(&key.time), sizeof(float));
+	_Out.write(reinterpret_cast<const char*>(&key.position[0]), sizeof(key.position));
+	return _Out;
+}
+
+static inline std::istream& operator>>(std::istream& _In, cxmf::AnimPositionKey& key)
+{
+	_In.read(reinterpret_cast<char*>(&key.time), sizeof(float));
+	_In.read(reinterpret_cast<char*>(&key.position[0]), sizeof(key.position));
+	return _In;
+}
+
+// cxmf::AnimRotationKey
+
+static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::AnimRotationKey& key)
+{
+	_Out.write(reinterpret_cast<const char*>(&key.time), sizeof(float));
+	_Out.write(reinterpret_cast<const char*>(&key.rotation[0]), sizeof(key.rotation));
+	return _Out;
+}
+
+static inline std::istream& operator>>(std::istream& _In, cxmf::AnimRotationKey& key)
+{
+	_In.read(reinterpret_cast<char*>(&key.time), sizeof(float));
+	_In.read(reinterpret_cast<char*>(&key.rotation[0]), sizeof(key.rotation));
+	return _In;
+}
+
+// cxmf::AnimScaleKey
+
+static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::AnimScaleKey& key)
+{
+	_Out.write(reinterpret_cast<const char*>(&key.time), sizeof(float));
+	_Out.write(reinterpret_cast<const char*>(&key.scale[0]), sizeof(key.scale));
+	return _Out;
+}
+
+static inline std::istream& operator>>(std::istream& _In, cxmf::AnimScaleKey& key)
+{
+	_In.read(reinterpret_cast<char*>(&key.time), sizeof(float));
+	_In.read(reinterpret_cast<char*>(&key.scale[0]), sizeof(key.scale));
+	return _In;
+}
+
+// cxmf::AnimNode
+
+static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::AnimNode& node)
+{
+	const uint32_t nameLen = static_cast<uint32_t>(node.boneName.length());
+	const uint32_t positionKeysCount = static_cast<uint32_t>(node.positionKeys.size());
+	const uint32_t rotationKeysCount = static_cast<uint32_t>(node.rotationKeys.size());
+	const uint32_t scaleKeysCount = static_cast<uint32_t>(node.scaleKeys.size());
+
+	_Out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
+	_Out.write(reinterpret_cast<const char*>(&positionKeysCount), sizeof(uint32_t));
+	_Out.write(reinterpret_cast<const char*>(&rotationKeysCount), sizeof(uint32_t));
+	_Out.write(reinterpret_cast<const char*>(&scaleKeysCount), sizeof(uint32_t));
+	_Out.write(node.boneName.c_str(), node.boneName.length());
+	for (uint32_t i_key = 0; i_key < positionKeysCount; ++i_key)
+	{
+		_Out << node.positionKeys[i_key];
+	}
+	for (uint32_t i_key = 0; i_key < rotationKeysCount; ++i_key)
+	{
+		_Out << node.rotationKeys[i_key];
+	}
+	for (uint32_t i_key = 0; i_key < scaleKeysCount; ++i_key)
+	{
+		_Out << node.scaleKeys[i_key];
+	}
+	return _Out;
+}
+
+static inline std::istream& operator>>(std::istream& _In, cxmf::AnimNode& node)
+{
+	uint32_t nameLen = 0;
+	uint32_t positionKeysCount = 0;
+	uint32_t rotationKeysCount = 0;
+	uint32_t scaleKeysCount = 0;
+
+	_In.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
+	_In.read(reinterpret_cast<char*>(&positionKeysCount), sizeof(uint32_t));
+	_In.read(reinterpret_cast<char*>(&rotationKeysCount), sizeof(uint32_t));
+	_In.read(reinterpret_cast<char*>(&scaleKeysCount), sizeof(uint32_t));
+
+	node.boneName.resize(nameLen, '\0');
+	node.positionKeys.resize(positionKeysCount);
+	node.rotationKeys.resize(rotationKeysCount);
+	node.scaleKeys.resize(scaleKeysCount);
+
+	_In.read(node.boneName.data(), nameLen);
+	for (uint32_t i_key = 0; i_key < positionKeysCount; ++i_key)
+	{
+		_In >> node.positionKeys[i_key];
+	}
+	for (uint32_t i_key = 0; i_key < rotationKeysCount; ++i_key)
+	{
+		_In >> node.rotationKeys[i_key];
+	}
+	for (uint32_t i_key = 0; i_key < scaleKeysCount; ++i_key)
+	{
+		_In >> node.scaleKeys[i_key];
+	}
+	return _In;
+}
+
+// cxmf::SkeletalAnimation
+
+static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::SkeletalAnimation& animation)
+{
+	const uint32_t nameLen = static_cast<uint32_t>(animation.name.length());
+	const uint32_t nodesCount = static_cast<uint32_t>(animation.nodes.size());
+
+	_Out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
+	_Out.write(reinterpret_cast<const char*>(&nodesCount), sizeof(uint32_t));
+	_Out.write(animation.name.c_str(), animation.name.length());
+	_Out.write(reinterpret_cast<const char*>(&animation.duration), sizeof(float));
+	_Out.write(reinterpret_cast<const char*>(&animation.ticksPerSecond), sizeof(float));
+	for (uint32_t i_node = 0; i_node < nodesCount; ++i_node)
+	{
+		_Out << animation.nodes[i_node];
+	}
+	return _Out;
+}
+
+static inline std::istream& operator>>(std::istream& _In, cxmf::SkeletalAnimation& animation)
+{
+	uint32_t nameLen = 0;
+	uint32_t nodesCount = 0;
+
+	_In.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
+	_In.read(reinterpret_cast<char*>(&nodesCount), sizeof(uint32_t));
+
+	animation.name.resize(nameLen, '\0');
+	animation.nodes.resize(nodesCount);
+
+	_In.read(animation.name.data(), nameLen);
+	_In.read(reinterpret_cast<char*>(&animation.duration), sizeof(float));
+	_In.read(reinterpret_cast<char*>(&animation.ticksPerSecond), sizeof(float));
+	for (uint32_t i_node = 0; i_node < nodesCount; ++i_node)
+	{
+		_In >> animation.nodes[i_node];
+	}
+	return _In;
+}
+
+// cxmf::SkeletalAnimationArray
+
+static inline std::ostream& operator<<(std::ostream& _Out, const cxmf::SkeletalAnimationArray& animations)
+{
+	const uint32_t animsCount = static_cast<uint32_t>(animations.size());
+
+	_Out.write(reinterpret_cast<const char*>(&animsCount), sizeof(uint32_t));
+	for (uint32_t i_anim = 0; i_anim < animsCount; ++i_anim)
+	{
+		_Out << animations[i_anim];
+	}
+	return _Out;
+}
+
+static inline std::istream& operator>>(std::istream& _In, cxmf::SkeletalAnimationArray& animations)
+{
+	uint32_t animsCount = 0;
+
+	_In.read(reinterpret_cast<char*>(&animsCount), sizeof(uint32_t));
+
+	animations.resize(animsCount);
+
+	for (uint32_t i_anim = 0; i_anim < animsCount; ++i_anim)
+	{
+		_In >> animations[i_anim];
+	}
+	return _In;
+}
+
 
 
 
@@ -651,7 +830,7 @@ IModel* OpenModel(const std::string& filePath, std::string& err)
 
 	if (static_cast<size_t>(header.size) != fileSize)
 	{
-		err += "Model is damaged!\n";
+		err += "File is damaged!\n";
 		return nullptr;
 	}
 
@@ -659,7 +838,7 @@ IModel* OpenModel(const std::string& filePath, std::string& err)
 	decode_version(header.version, ver_major, ver_minor, ver_patch);
 	if (ver_major != CXMF_VERSION_MAJOR || ver_minor != CXMF_VERSION_MINOR)
 	{
-		err += std::format("Invalid model version: {}.{}.{}\n", ver_major, ver_minor, ver_patch);
+		err += std::format("Invalid version: {}.{}.{}\n", ver_major, ver_minor, ver_patch);
 		return nullptr;
 	}
 
@@ -683,7 +862,7 @@ IModel* OpenModel(const std::string& filePath, std::string& err)
 	else
 	{
 		outModel = nullptr;
-		err += "Invalid model type!\n";
+		err += "File does not have a model!\n";
 	}
 	return outModel;
 }
@@ -967,6 +1146,273 @@ std::string DumpModel(const IModel& model)
 		return dump_skinned_model(*model.SkinnedModelCast());
 	else
 		return std::string();
+}
+
+
+
+SkeletalAnimationArray* ImportSkeletalAnimations(const std::string& filePath, std::string& err)
+{
+	err.clear();
+	cxmfScopeLogger logger(err, Assimp::Logger::LogSeverity::NORMAL,  //
+						   Assimp::Logger::ErrorSeverity::Warn | Assimp::Logger::ErrorSeverity::Err);
+
+	Assimp::Importer importer;
+
+	uint32_t importFlags = aiProcess_Triangulate |		 //
+						   aiProcess_GenSmoothNormals |	 //
+						   aiProcess_FlipUVs;
+	const aiScene* const scene = importer.ReadFile(filePath, importFlags);
+	if (!scene) return nullptr;
+
+	if (!scene->HasAnimations())
+	{
+		ASSIMP_LOG_ERROR("File has no animations!");
+		return nullptr;
+	}
+
+	std::unordered_map<uint32_t, std::vector<uint32_t>> availableAnims;
+	for (uint32_t i_anim = 0; i_anim < scene->mNumAnimations; ++i_anim)
+	{
+		const aiAnimation& sceneAnim = *scene->mAnimations[i_anim];
+		if (sceneAnim.mName.Empty())  //
+			continue;
+
+		for (uint32_t i_node = 0; i_node < sceneAnim.mNumChannels; ++i_node)
+		{
+			const aiNodeAnim& aiNode = *sceneAnim.mChannels[i_node];
+			if (aiNode.mNumPositionKeys > 0 || aiNode.mNumRotationKeys > 0 || aiNode.mNumScalingKeys > 0)
+			{
+				availableAnims[i_anim].push_back(i_node);
+			}
+		}
+	}
+
+	if (availableAnims.empty())
+	{
+		ASSIMP_LOG_ERROR("File has no skeletal animations!");
+		return nullptr;
+	}
+
+	SkeletalAnimationArray* const animations = new SkeletalAnimationArray();
+	animations->reserve(availableAnims.size());
+	for (const auto& [i_anim, channelIndices] : availableAnims)
+	{
+		SkeletalAnimation& anim = animations->emplace_back();
+		const aiAnimation& sceneAnim = *scene->mAnimations[i_anim];
+
+		anim.name = sceneAnim.mName.C_Str();
+		anim.duration = static_cast<float>(sceneAnim.mDuration);
+		anim.ticksPerSecond = static_cast<float>(sceneAnim.mTicksPerSecond);
+		anim.nodes.reserve(channelIndices.size());
+
+		for (uint32_t i_node : channelIndices)
+		{
+			AnimNode& node = anim.nodes.emplace_back();
+			const aiNodeAnim& aiNode = *sceneAnim.mChannels[i_node];
+
+			node.boneName = aiNode.mNodeName.C_Str();
+			node.positionKeys.resize(aiNode.mNumPositionKeys);
+			node.rotationKeys.resize(aiNode.mNumRotationKeys);
+			node.scaleKeys.resize(aiNode.mNumScalingKeys);
+
+			for (uint32_t i_key = 0; i_key < aiNode.mNumPositionKeys; ++i_key)
+			{
+				AnimPositionKey& key = node.positionKeys[i_key];
+				const aiVectorKey& aiKey = aiNode.mPositionKeys[i_key];
+
+				key.time = static_cast<float>(aiKey.mTime);
+				key.position[0] = aiKey.mValue.x;
+				key.position[1] = aiKey.mValue.y;
+				key.position[2] = aiKey.mValue.z;
+			}
+			for (uint32_t i_key = 0; i_key < aiNode.mNumRotationKeys; ++i_key)
+			{
+				AnimRotationKey& key = node.rotationKeys[i_key];
+				const aiQuatKey& aiKey = aiNode.mRotationKeys[i_key];
+
+				key.time = static_cast<float>(aiKey.mTime);
+				key.rotation[0] = aiKey.mValue.x;
+				key.rotation[1] = aiKey.mValue.y;
+				key.rotation[2] = aiKey.mValue.z;
+				key.rotation[3] = aiKey.mValue.w;
+			}
+			for (uint32_t i_key = 0; i_key < aiNode.mNumScalingKeys; ++i_key)
+			{
+				AnimScaleKey& key = node.scaleKeys[i_key];
+				const aiVectorKey& aiKey = aiNode.mScalingKeys[i_key];
+
+				key.time = static_cast<float>(aiKey.mTime);
+				key.scale[0] = aiKey.mValue.x;
+				key.scale[1] = aiKey.mValue.y;
+				key.scale[2] = aiKey.mValue.z;
+			}
+		}
+	}
+	return animations;
+}
+
+SkeletalAnimationArray* OpenSkeletalAnimations(const std::string& filePath, std::string& err)
+{
+	err.clear();
+
+	std::ifstream file(filePath, std::ios::binary);
+	if (!file.is_open())
+	{
+		err += "Cannot open file!\n";
+		return nullptr;
+	}
+
+	file.seekg(0, std::ios::end);
+
+	const size_t fileSize = static_cast<size_t>(file.tellg());
+	if (fileSize <= sizeof(HEADER))
+	{
+		err += "Invalid file size!\n";
+		return nullptr;
+	}
+
+	file.seekg(0, std::ios::beg);
+
+	HEADER header{};
+	file.read(reinterpret_cast<char*>(&header), sizeof(HEADER));
+
+	if (header.magic != MAGIC)
+	{
+		err += "Invalid file format!\n";
+		return nullptr;
+	}
+
+	if (static_cast<size_t>(header.size) != fileSize)
+	{
+		err += "File is damaged!\n";
+		return nullptr;
+	}
+
+	uint32_t ver_major, ver_minor, ver_patch;
+	decode_version(header.version, ver_major, ver_minor, ver_patch);
+	if (ver_major != CXMF_VERSION_MAJOR || ver_minor != CXMF_VERSION_MINOR)
+	{
+		err += std::format("Invalid version: {}.{}.{}\n", ver_major, ver_minor, ver_patch);
+		return nullptr;
+	}
+
+	SkeletalAnimationArray* animations;
+	if (header.flags & HEADER_FLAG_SK_ANIM)
+	{
+		animations = new SkeletalAnimationArray();
+		file >> *animations;
+	}
+	else
+	{
+		animations = nullptr;
+		err += "File does not have a skeletal animations!\n";
+	}
+	return animations;
+}
+
+
+
+bool SaveSkeletalAnimations(const std::string& filePath, const SkeletalAnimationArray& animations, std::string& err)
+{
+	err.clear();
+
+	if (animations.empty())
+	{
+		err += "There are no animations that can be saved!\n";
+		return false;
+	}
+
+	std::ofstream file(filePath, std::ios::binary | std::ios::trunc);
+	if (!file.is_open())
+	{
+		err += "Cannot open file!\n";
+		return false;
+	}
+
+	HEADER header{};
+	header.magic = MAGIC;
+	header.version = CXMF_VERSION;
+	header.size = 0;
+	header.flags = HEADER_FLAG_SK_ANIM;
+	file.write(reinterpret_cast<const char*>(&header), sizeof(HEADER));
+	file << animations;
+	const uint32_t fileSize = static_cast<uint32_t>(file.tellp());
+	file.seekp(offsetof(HEADER, size), std::ios::beg);
+	file.write(reinterpret_cast<const char*>(&fileSize), sizeof(uint32_t));
+	return true;
+}
+
+
+
+std::string DumpSkeletalAnimations(const SkeletalAnimationArray& animations)
+{
+	std::string indents;
+	const auto add_indent = [&indents]() -> void
+	{
+		indents.push_back('\t');
+	};
+	const auto remove_indent = [&indents]() -> void
+	{
+		indents.pop_back();
+	};
+
+
+
+	std::stringstream buf;
+	for (size_t i_anim = 0; i_anim < animations.size(); ++i_anim)
+	{
+		const SkeletalAnimation& anim = animations[i_anim];
+		buf << std::format("Animation {}: {}, duration: {:.3f}, ticks per sec: {}",	 //
+						   i_anim, anim.name, anim.duration, anim.ticksPerSecond);
+		buf << "\n\n";
+
+		add_indent();
+		for (size_t i_node = 0; i_node < anim.nodes.size(); ++i_node)
+		{
+			const AnimNode& node = anim.nodes[i_node];
+			buf << indents << std::format("Node {}: {}", i_node, node.boneName) << "\n\n";
+
+			add_indent();
+			for (size_t i_key = 0; i_key < node.positionKeys.size(); ++i_key)
+			{
+				const AnimPositionKey& key = node.positionKeys[i_key];
+				buf << indents << std::format("Position key {}:", i_key) << "\n";
+				add_indent();
+				buf << indents << std::format("time: {}", key.time) << "\n";
+				buf << indents << std::format("value({}, {}, {})", key.position[0], key.position[1], key.position[2]) << "\n";
+				remove_indent();
+			}
+			buf << "\n";
+			for (size_t i_key = 0; i_key < node.rotationKeys.size(); ++i_key)
+			{
+				const AnimRotationKey& key = node.rotationKeys[i_key];
+				const std::string val = std::format("value({}, {}, {}, {})",		   //
+													key.rotation[0], key.rotation[1],  //
+													key.rotation[2], key.rotation[3]);
+
+				buf << indents << std::format("Rotation key {}:", i_key) << "\n";
+				add_indent();
+				buf << indents << std::format("time: {}", key.time) << "\n";
+				buf << indents << val << "\n";
+				remove_indent();
+			}
+			buf << "\n";
+			for (size_t i_key = 0; i_key < node.scaleKeys.size(); ++i_key)
+			{
+				const AnimScaleKey& key = node.scaleKeys[i_key];
+				buf << indents << std::format("Scale key {}:", i_key) << "\n";
+				add_indent();
+				buf << indents << std::format("time: {}", key.time) << "\n";
+				buf << indents << std::format("value({}, {}, {})", key.scale[0], key.scale[1], key.scale[2]) << "\n";
+				remove_indent();
+			}
+			remove_indent();
+			buf << "\n";
+		}
+		remove_indent();
+		buf << "\n";
+	}
+	return buf.str();
 }
 
 _CXMF_END

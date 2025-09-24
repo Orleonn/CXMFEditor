@@ -141,8 +141,14 @@ PreviewWindow::~PreviewWindow()
 	delete m_Impl;
 }
 
-void PreviewWindow::onPaintCallback(wxPaintEvent& /* event */)
+void PreviewWindow::onPaintCallback(wxPaintEvent& event)
 {
+	if (!get_impl().model)
+	{
+		event.Skip();
+		return;
+	}
+
 	m_GLCtx->SetCurrent(*this);
 
 	viewport_camera& camera = get_impl().cam;
@@ -618,5 +624,5 @@ void PreviewWindow::draw_center_axis()
 void PreviewWindow::SetModel(const cxmf::IModel* model)
 {
 	get_impl().model = model;
-	this->Refresh();
+	if (model) this->Refresh();
 }
