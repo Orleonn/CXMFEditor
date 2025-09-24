@@ -23,9 +23,9 @@
 #include <wx/textctrl.h>
 #include <wx/sizer.h>
 #include <wx/button.h>
+#include <wx/statline.h>
 #include <wx/listbook.h>
 #include <wx/listctrl.h>
-#include <wx/statline.h>
 #include <wx/panel.h>
 #include <wx/notebook.h>
 #include <wx/statusbr.h>
@@ -46,9 +46,11 @@ class CXMFWindowBase : public wxFrame
 	protected:
 		wxMenuBar* m_menubar;
 		wxMenu* m_menuFile;
+		wxMenu* m_menuImport;
+		wxMenu* m_menuOpen;
 		wxMenu* m_menuInfo;
-		wxNotebook* m_ModelMainPanel;
-		wxPanel* m_ModelPanel_Main;
+		wxNotebook* m_MainNotebook;
+		wxPanel* m_MainPanel_Model;
 		wxStaticText* m_staticText3;
 		wxTextCtrl* m_textCtrlModelName;
 		wxStaticText* m_staticText31;
@@ -58,15 +60,21 @@ class CXMFWindowBase : public wxFrame
 		wxStaticText* m_staticText71;
 		wxStaticText* m_TextTotalFaces;
 		wxButton* m_button4;
+		wxStaticLine* m_staticline2;
 		wxListbook* m_listMesh;
 		wxStaticLine* m_staticline1;
 		wxListbook* m_listBones;
+		wxPanel* m_MainPanel_SkAnim;
+		wxButton* m_button7;
+		wxListbook* m_listSkAnims;
 		wxStatusBar* m_statusBar;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void onWindowButton_Close( wxCloseEvent& event ) { event.Skip(); }
-		virtual void onMenuSelect_File_Import( wxCommandEvent& event ) { event.Skip(); }
-		virtual void onMenuSelect_File_Open( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onMenuSelect_File_ImportModel( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onMenuSelect_File_ImportSkAnim( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onMenuSelect_File_OpenModel( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onMenuSelect_File_OpenSkAnim( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_File_Save( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_File_Exit( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_Info_Preview( wxCommandEvent& event ) { event.Skip(); }
@@ -74,6 +82,7 @@ class CXMFWindowBase : public wxFrame
 		virtual void onMenuSelect_Info_Github( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnModelNameChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnButton_DumpModel( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_DumpSkAnim( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
@@ -137,9 +146,9 @@ class CXMFTextDialogBase : public wxDialog
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class CXMFModelDumpDlgBase
+/// Class CXMFDumpDlgBase
 ///////////////////////////////////////////////////////////////////////////////
-class CXMFModelDumpDlgBase : public wxDialog
+class CXMFDumpDlgBase : public wxDialog
 {
 	private:
 
@@ -155,9 +164,9 @@ class CXMFModelDumpDlgBase : public wxDialog
 
 	public:
 
-		CXMFModelDumpDlgBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Model Dump"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 680,640 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
+		CXMFDumpDlgBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Information"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 680,640 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
 
-		~CXMFModelDumpDlgBase();
+		~CXMFDumpDlgBase();
 
 };
 

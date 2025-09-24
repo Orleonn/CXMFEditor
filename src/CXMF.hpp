@@ -46,7 +46,8 @@ constexpr inline uint32_t NO_BONE = 0xFFFFFFFFU;
 enum HEADER_FLAG : uint32_t
 {
 	HEADER_FLAG_STATIC = 0x00000001,
-	HEADER_FLAG_SKINNED = 0x00000002
+	HEADER_FLAG_SKINNED = 0x00000002,
+	HEADER_FLAG_SK_ANIM = 0x00000004
 };
 
 struct HEADER
@@ -211,6 +212,44 @@ public:
 
 
 
+struct AnimPositionKey
+{
+	float time;
+	float position[3];	// vector3D(x, y, z)
+};
+
+struct AnimRotationKey
+{
+	float time;
+	float rotation[4];	// quaternion(x, y, z, w)
+};
+
+struct AnimScaleKey
+{
+	float time;
+	float scale[3];	 // vector3D(x, y, z)
+};
+
+struct AnimNode
+{
+	std::string boneName;
+	std::vector<AnimPositionKey> positionKeys;
+	std::vector<AnimRotationKey> rotationKeys;
+	std::vector<AnimScaleKey> scaleKeys;
+};
+
+struct SkeletalAnimation
+{
+	std::string name;
+	std::vector<AnimNode> nodes;
+	float duration;
+	float ticksPerSecond;
+};
+
+using SkeletalAnimationArray = std::vector<SkeletalAnimation>;
+
+
+
 struct ImportSettings
 {
 	float angleGSN = 0.0F;
@@ -225,5 +264,15 @@ extern IModel* OpenModel(const std::string& filePath, std::string& err);
 extern bool SaveModel(const std::string& filePath, IModel& model, std::string& err);
 
 extern std::string DumpModel(const IModel& model);
+
+
+
+extern SkeletalAnimationArray* ImportSkeletalAnimations(const std::string& filePath, std::string& err);
+
+extern SkeletalAnimationArray* OpenSkeletalAnimations(const std::string& filePath, std::string& err);
+
+extern bool SaveSkeletalAnimations(const std::string& filePath, const SkeletalAnimationArray& animations, std::string& err);
+
+extern std::string DumpSkeletalAnimations(const SkeletalAnimationArray& animations);
 
 _CXMF_END

@@ -3,9 +3,11 @@
 #ifndef WX_PRECOMP
 	#include "wx/wx.h"
 #endif
-#include "wx/clipbrd.h"
 
+#include "wx/clipbrd.h"
+#include "wx/choicebk.h"
 #include "CXMFEditor.h"
+
 #include "CXMF.hpp"
 #include "ModelPreview.hpp"
 
@@ -114,38 +116,39 @@ wxString CXMFTextDialog::GetCtrlText() const
 
 
 
-class CXMFModelDumpDlg final : public CXMFModelDumpDlgBase
+class CXMFDumpDlg final : public CXMFDumpDlgBase
 {
 private:
-	using Super = CXMFModelDumpDlgBase;
+	using Super = CXMFDumpDlgBase;
 
 private:
 	void OnButton_Ok(wxCommandEvent& event) override;
 	void OnButton_Copy(wxCommandEvent& event) override;
 
 public:
-	CXMFModelDumpDlg() = delete;
+	CXMFDumpDlg() = delete;
 
-	explicit CXMFModelDumpDlg(wxWindow* parent);
+	explicit CXMFDumpDlg(wxWindow* parent);
 
-	~CXMFModelDumpDlg() = default;
+	~CXMFDumpDlg() = default;
 
 public:
 	void DumpModel(const cxmf::IModel& iModel);
+	void DumpSkAnim(const cxmf::SkeletalAnimationArray& animations);
 };
 
-CXMFModelDumpDlg::CXMFModelDumpDlg(wxWindow* parent)
+CXMFDumpDlg::CXMFDumpDlg(wxWindow* parent)
 	: Super(parent)
 {
 	//
 }
 
-void CXMFModelDumpDlg::OnButton_Ok(wxCommandEvent& event)
+void CXMFDumpDlg::OnButton_Ok(wxCommandEvent& event)
 {
 	this->EndDialog(wxID_OK);
 }
 
-void CXMFModelDumpDlg::OnButton_Copy(wxCommandEvent& /* event */)
+void CXMFDumpDlg::OnButton_Copy(wxCommandEvent& /* event */)
 {
 	if (wxTheClipboard->Open())
 	{
@@ -160,11 +163,28 @@ void CXMFModelDumpDlg::OnButton_Copy(wxCommandEvent& /* event */)
 	}
 }
 
-void CXMFModelDumpDlg::DumpModel(const cxmf::IModel& iModel)
+void CXMFDumpDlg::DumpModel(const cxmf::IModel& iModel)
 {
 	Super::m_textCtrl->SetValue(cxmf::DumpModel(iModel));
 	ShowModal();
 }
+
+void CXMFDumpDlg::DumpSkAnim(const cxmf::SkeletalAnimationArray& animations)
+{
+	Super::m_textCtrl->SetValue(cxmf::DumpSkeletalAnimations(animations));
+	ShowModal();
+}
+
+
+
+class SkeletonAnimNodeUserData final : public wxObject
+{
+public:
+	wxChoicebook* nodeList;
+	wxPanel* nodePanel;
+	cxmf::AnimNode* node;
+	cxmf::SkeletalAnimation* animation;
+};
 
 
 
@@ -174,31 +194,54 @@ private:
 	using Super = CXMFWindowBase;
 
 private:
+	enum class object_type : uint32_t
+	{
+		model,
+		sk_anim
+	};
+
+private:
 	PreviewWindow* m_PreviewWnd;
 	cxmf::IModel* m_Model;
+	cxmf::SkeletalAnimationArray* m_SkAnims;
 	bool m_HasChanges;
 
 private:
-	void _destroy_model();
-	void _show_controls(bool b);
+	void _destroy_objects();
+	void _show_controls();
 
 	void _add_mesh_name_field(wxPanel* panel, wxBoxSizer* sizer, const std::string& baseName);
 	void _add_texture_path_field(wxPanel* panel, wxBoxSizer* sizer, const std::string& baseName);
 	void _add_vertex_counter(wxPanel* panel, wxBoxSizer* sizer, size_t vertexCount);
 	void _add_face_counter(wxPanel* panel, wxBoxSizer* sizer, size_t faceCount);
 	void _add_bone_field(wxPanel* panel, wxBoxSizer* sizer, const std::string& baseName, uint32_t parentIndex);
+	void _add_skeleton_anim_node(wxPanel* panel, wxBoxSizer* sizer, wxChoicebook* nodeList,	 //
+								 cxmf::AnimNode& node, cxmf::SkeletalAnimation& animation);
+	void _add_skeleton_animation(wxPanel* panel, wxBoxSizer* sizer, cxmf::SkeletalAnimation& animation);
 
 	void _on_mesh_name_text_update(wxCommandEvent& event);
 	void _on_texture_path_text_update(wxCommandEvent& event);
 	void _on_bone_name_change(wxCommandEvent& event);
+	void _on_animation_name_change(wxCommandEvent& event);
+	void _on_animation_node_name_change(wxCommandEvent& event);
 
 	void _fill_as_static();
 	void _fill_as_skinned();
+	void _fill_as_sk_anim();
 
 	void set_total_verticies(size_t count);
 	void set_total_faces(size_t count);
 	void set_status_text(const std::string& text);
 	bool try_save_changes();
+
+	void clear_main_panel()
+	{
+		const size_t count = Super::m_MainNotebook->GetPageCount();
+		for (size_t i = 0; i < count; ++i)
+		{
+			Super::m_MainNotebook->RemovePage(0);
+		}
+	}
 
 	bool has_changes() const
 	{
@@ -216,8 +259,10 @@ private:
 
 private:
 	void onWindowButton_Close(wxCloseEvent& event) override;
-	void onMenuSelect_File_Import(wxCommandEvent& event) override;
-	void onMenuSelect_File_Open(wxCommandEvent& event) override;
+	void onMenuSelect_File_ImportModel(wxCommandEvent& event) override;
+	void onMenuSelect_File_ImportSkAnim(wxCommandEvent& event) override;
+	void onMenuSelect_File_OpenModel(wxCommandEvent& event) override;
+	void onMenuSelect_File_OpenSkAnim(wxCommandEvent& event) override;
 	void onMenuSelect_File_Save(wxCommandEvent& event) override;
 	void onMenuSelect_File_Exit(wxCommandEvent& event) override;
 	void onMenuSelect_Info_Preview(wxCommandEvent& event) override;
@@ -225,15 +270,22 @@ private:
 	void onMenuSelect_Info_Github(wxCommandEvent& event) override;
 	void OnModelNameChange(wxCommandEvent& event) override;
 	void OnButton_DumpModel(wxCommandEvent& event) override;
+	void OnButton_DumpSkAnim(wxCommandEvent& event) override;
 
 private:
-	void StartModelImport();
-	void StartModelOpen();
-	void StartModelSave();
+	void StartImporting(object_type type);
+	void StartOpening(object_type type);
+	void StartSaving();
 	void StartClosing();
 
 	void Reset();
 	void SetModel(cxmf::IModel* model);
+	void SetSkAnim(cxmf::SkeletalAnimationArray* animations);
+
+	bool HasAnyObject() const
+	{
+		return (m_Model != nullptr || m_SkAnims != nullptr);
+	}
 
 public:
 	MainWindow();
@@ -241,33 +293,54 @@ public:
 };
 
 MainWindow::MainWindow()
-	: Super(nullptr), m_PreviewWnd(nullptr), m_Model(nullptr), m_HasChanges(false)
+	: Super(nullptr), m_PreviewWnd(nullptr), m_Model(nullptr), m_SkAnims(nullptr), m_HasChanges(false)
 {
-	m_PreviewWnd = new PreviewWindow(Super::m_ModelMainPanel);
-	Super::m_ModelMainPanel->AddPage(m_PreviewWnd, "Viewport", false);
+	m_PreviewWnd = new PreviewWindow(Super::m_MainNotebook);
+	clear_main_panel();
 
 	this->Show(true);
 }
 
 MainWindow::~MainWindow()
 {
-	_destroy_model();
+	_destroy_objects();
 }
 
-void MainWindow::_destroy_model()
+void MainWindow::_destroy_objects()
 {
 	if (m_Model)
 	{
 		delete m_Model;
 		m_Model = nullptr;
 	}
+	if (m_SkAnims)
+	{
+		delete m_SkAnims;
+		m_SkAnims = nullptr;
+	}
 }
 
-void MainWindow::_show_controls(bool b)
+void MainWindow::_show_controls()
 {
+	const bool hasObject = HasAnyObject();
+
 	wxMenuItem* const item = Super::m_menuFile->GetMenuItems()[2];
-	if (item) item->Enable(b);
-	Super::m_ModelMainPanel->Enable(b);
+	if (item) item->Enable(hasObject);
+
+	clear_main_panel();
+	if (hasObject)
+	{
+		wxNotebook* const notebook = Super::m_MainNotebook;
+		if (m_Model)
+		{
+			notebook->AddPage(Super::m_MainPanel_Model, "Model", true);
+			notebook->AddPage(m_PreviewWnd, "Viewport", false);
+		}
+		else if (m_SkAnims)
+		{
+			notebook->AddPage(Super::m_MainPanel_SkAnim, "Animations", true);
+		}
+	}
 }
 
 void MainWindow::_add_mesh_name_field(wxPanel* panel, wxBoxSizer* sizer, const std::string& baseName)
@@ -370,6 +443,83 @@ void MainWindow::_add_bone_field(wxPanel* panel, wxBoxSizer* sizer, const std::s
 						   nullptr, this);
 }
 
+void MainWindow::_add_skeleton_anim_node(wxPanel* panel, wxBoxSizer* sizer, wxChoicebook* nodeList,	 //
+										 cxmf::AnimNode& node, cxmf::SkeletalAnimation& animation)
+{
+	const std::string posStr = std::format("Position keys: {}", node.positionKeys.size());
+	const std::string rotStr = std::format("Rotation keys: {}", node.rotationKeys.size());
+	const std::string sclStr = std::format("Scale keys: {}", node.scaleKeys.size());
+
+	wxButton* const changeNameBtn = new wxButton(panel, wxID_ANY, "Change name");
+	sizer->Add(changeNameBtn, 0, wxALL, 5);
+
+	wxStaticText* const posText = new wxStaticText(panel, wxID_ANY, posStr);
+	posText->Wrap(-1);
+	sizer->Add(posText, 0, wxALL, 5);
+
+	wxStaticText* const rotText = new wxStaticText(panel, wxID_ANY, rotStr);
+	rotText->Wrap(-1);
+	sizer->Add(rotText, 0, wxALL, 5);
+
+	wxStaticText* const sclText = new wxStaticText(panel, wxID_ANY, sclStr);
+	sclText->Wrap(-1);
+	sizer->Add(sclText, 0, wxALL, 5);
+
+	SkeletonAnimNodeUserData* const userData = new SkeletonAnimNodeUserData();
+	userData->nodeList = nodeList;
+	userData->nodePanel = panel;
+	userData->node = &node;
+	userData->animation = &animation;
+
+	changeNameBtn->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MainWindow::_on_animation_node_name_change),	 //
+						   userData, this);
+}
+
+void MainWindow::_add_skeleton_animation(wxPanel* panel, wxBoxSizer* sizer, cxmf::SkeletalAnimation& animation)
+{
+	const std::string durationStr = std::format("Duration: {:.3f} ({:.3f} sec)",  //
+												animation.duration, (animation.duration / animation.ticksPerSecond));
+	const std::string ticksPerSecStr = std::format("Ticks per second: {}",		  //
+												   animation.ticksPerSecond);
+
+	wxStaticText* const nameText = new wxStaticText(panel, 0, animation.name);
+	nameText->Wrap(-1);
+	sizer->Add(nameText, 0, wxALL, 5);
+
+	wxButton* const changeNameBtn = new wxButton(panel, wxID_ANY, "Change name");
+	sizer->Add(changeNameBtn, 0, wxALL, 5);
+
+	wxStaticText* const durText = new wxStaticText(panel, wxID_ANY, durationStr);
+	durText->Wrap(-1);
+	sizer->Add(durText, 0, wxALL, 5);
+
+	wxStaticText* const tpsText = new wxStaticText(panel, wxID_ANY, ticksPerSecStr);
+	tpsText->Wrap(-1);
+	sizer->Add(tpsText, 0, wxALL, 5);
+
+	wxStaticLine* const divider1 = new wxStaticLine(panel);
+	sizer->Add(divider1, 0, wxEXPAND | wxALL, 5);
+
+	wxChoicebook* const nodeList = new wxChoicebook(panel, wxID_ANY);
+	for (cxmf::AnimNode& node : animation.nodes)
+	{
+		wxPanel* const nodePanel = new wxPanel(nodeList);
+		wxBoxSizer* const nodeSizer = new wxBoxSizer(wxVERTICAL);
+
+		_add_skeleton_anim_node(nodePanel, nodeSizer, nodeList, node, animation);
+
+		nodePanel->SetSizer(nodeSizer);
+		nodePanel->Layout();
+		nodeSizer->Fit(nodePanel);
+		nodeList->AddPage(nodePanel, node.boneName);
+	}
+	sizer->Add(nodeList, 1, wxEXPAND | wxALL, 5);
+
+	changeNameBtn->SetClientData(panel);
+	changeNameBtn->Connect(wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(MainWindow::_on_animation_name_change),	//
+						   nullptr, this);
+}
+
 void MainWindow::_on_mesh_name_text_update(wxCommandEvent& event)
 {
 	wxTextCtrl* const ctrl = wxDynamicCast(event.GetEventObject(), wxTextCtrl);
@@ -465,6 +615,120 @@ void MainWindow::_on_bone_name_change(wxCommandEvent& event)
 		model.boneMapping[newName] = bone.id;
 		bone.name = newName;
 		panelBoneName->SetLabelText(newName);
+		mark_changes();
+		break;
+	}
+}
+
+void MainWindow::_on_animation_name_change(wxCommandEvent& event)
+{
+	wxButton* const btn = wxDynamicCast(event.GetEventObject(), wxButton);
+	if (!btn) return;
+
+	wxPanel* const panel = static_cast<wxPanel*>(btn->GetClientData());
+	const int index = Super::m_listSkAnims->FindPage(panel);
+	if (index == wxNOT_FOUND)  //
+		return;
+
+	cxmf::SkeletalAnimation& animation = (*m_SkAnims)[index];
+
+	CXMFTextDialog dialog(this, btn->GetLabelText(), "Enter new name");
+	for (;;)
+	{
+		dialog.SetCtrlText(animation.name);
+		if (dialog.ShowModal() == wxID_CANCEL)	//
+			break;
+
+		std::string newName;
+		{
+			const wxString tmpName = dialog.GetCtrlText();
+			newName = tmpName.c_str();
+		}
+
+		if (newName == animation.name)	//
+			break;
+
+		if (newName.empty())
+		{
+			wxMessageBox("The name must not be empty!", "Error", wxOK | wxCENTRE | wxICON_ERROR, &dialog);
+			continue;
+		}
+
+		bool nameExist = false;
+		for (const cxmf::SkeletalAnimation& anim : *m_SkAnims)
+		{
+			if (newName == anim.name)
+			{
+				nameExist = true;
+				break;
+			}
+		}
+
+		if (nameExist)
+		{
+			wxMessageBox("Animation with this name already exists!", "Error", wxOK | wxCENTRE | wxICON_ERROR, &dialog);
+			continue;
+		}
+
+		animation.name = newName;
+		Super::m_listSkAnims->SetPageText(index, newName);
+		wxStaticText* const nameText = wxDynamicCast(panel->FindItem(0), wxStaticText);
+		if (nameText) nameText->SetLabelText(newName);
+		mark_changes();
+		break;
+	}
+}
+
+void MainWindow::_on_animation_node_name_change(wxCommandEvent& event)
+{
+	wxButton* const btn = wxDynamicCast(event.GetEventObject(), wxButton);
+	if (!btn) return;
+
+	SkeletonAnimNodeUserData* const userData = static_cast<SkeletonAnimNodeUserData*>(event.GetEventUserData());
+	const int index = userData->nodeList->FindPage(userData->nodePanel);
+	if (index == wxNOT_FOUND)  //
+		return;
+
+	CXMFTextDialog dialog(this, btn->GetLabelText(), "Enter new name");
+	for (;;)
+	{
+		dialog.SetCtrlText(userData->node->boneName);
+		if (dialog.ShowModal() == wxID_CANCEL)	//
+			break;
+
+		std::string newName;
+		{
+			const wxString tmpName = dialog.GetCtrlText();
+			newName = tmpName.c_str();
+		}
+
+		if (newName == userData->node->boneName)  //
+			break;
+
+		if (newName.empty())
+		{
+			wxMessageBox("The name must not be empty!", "Error", wxOK | wxCENTRE | wxICON_ERROR, &dialog);
+			continue;
+		}
+
+		bool nameExist = false;
+		for (const cxmf::AnimNode& node : userData->animation->nodes)
+		{
+			if (newName == node.boneName)
+			{
+				nameExist = true;
+				break;
+			}
+		}
+
+		if (nameExist)
+		{
+			wxMessageBox("Node with this name already exists!", "Error", wxOK | wxCENTRE | wxICON_ERROR, &dialog);
+			continue;
+		}
+
+		userData->node->boneName = newName;
+		userData->nodeList->SetPageText(index, newName);
 		mark_changes();
 		break;
 	}
@@ -579,6 +843,25 @@ void MainWindow::_fill_as_skinned()
 	set_total_faces(totalFaces);
 }
 
+void MainWindow::_fill_as_sk_anim()
+{
+	wxListbook* const listAnims = Super::m_listSkAnims;
+	listAnims->DeleteAllPages();
+
+	for (cxmf::SkeletalAnimation& animation : *m_SkAnims)
+	{
+		wxPanel* const animPanel = new wxPanel(listAnims);
+		wxBoxSizer* const animSizer = new wxBoxSizer(wxVERTICAL);
+
+		_add_skeleton_animation(animPanel, animSizer, animation);
+
+		animPanel->SetSizer(animSizer);
+		animPanel->Layout();
+		animSizer->Fit(animPanel);
+		listAnims->AddPage(animPanel, animation.name);
+	}
+}
+
 void MainWindow::set_total_verticies(size_t count)
 {
 	const std::string str = std::to_string(count);
@@ -598,25 +881,24 @@ void MainWindow::set_status_text(const std::string& text)
 
 bool MainWindow::try_save_changes()
 {
-	if (m_Model && has_changes())
+	if (HasAnyObject() && has_changes())
 	{
-		const char* const msg = "You have an unsaved model.\nDo you want to save it?";
+		const char* const msg = "You have an unsaved data.\nDo you want to save it?";
 		const int result = wxMessageBox(msg, "Warning", wxYES_NO | wxCANCEL | wxCENTRE | wxICON_WARNING, this);
 		if (result == wxCANCEL)	 //
 			return false;
 
 		if (result == wxYES)  //
-			StartModelSave();
+			StartSaving();
 	}
 	return true;
 }
 
 void MainWindow::Reset()
 {
-	_show_controls(m_Model != nullptr);
-	m_PreviewWnd->SetModel(m_Model);
 	if (m_Model)
 	{
+		m_PreviewWnd->SetModel(m_Model);
 		if (m_Model->StaticModelCast() != nullptr)
 		{
 			_fill_as_static();
@@ -626,19 +908,36 @@ void MainWindow::Reset()
 			_fill_as_skinned();
 		}
 	}
+	else
+	{
+		m_PreviewWnd->SetModel(nullptr);
+		if (m_SkAnims)
+		{
+			_fill_as_sk_anim();
+		}
+	}
+
+	_show_controls();
 	unmark_changes();
 }
 
 void MainWindow::SetModel(cxmf::IModel* model)
 {
-	_destroy_model();
+	_destroy_objects();
 	m_Model = model;
+	Reset();
+}
+
+void MainWindow::SetSkAnim(cxmf::SkeletalAnimationArray* animations)
+{
+	_destroy_objects();
+	m_SkAnims = animations;
 	Reset();
 }
 
 void MainWindow::onWindowButton_Close(wxCloseEvent& event)
 {
-	if (m_Model && event.CanVeto())
+	if (HasAnyObject() && event.CanVeto())
 	{
 		StartClosing();
 	}
@@ -648,19 +947,29 @@ void MainWindow::onWindowButton_Close(wxCloseEvent& event)
 	}
 }
 
-void MainWindow::onMenuSelect_File_Import(wxCommandEvent& /* event */)
+void MainWindow::onMenuSelect_File_ImportModel(wxCommandEvent& /* event */)
 {
-	StartModelImport();
+	StartImporting(object_type::model);
 }
 
-void MainWindow::onMenuSelect_File_Open(wxCommandEvent& /* event */)
+void MainWindow::onMenuSelect_File_ImportSkAnim(wxCommandEvent& /* event */)
 {
-	StartModelOpen();
+	StartImporting(object_type::sk_anim);
+}
+
+void MainWindow::onMenuSelect_File_OpenModel(wxCommandEvent& /* event */)
+{
+	StartOpening(object_type::model);
+}
+
+void MainWindow::onMenuSelect_File_OpenSkAnim(wxCommandEvent& /* event */)
+{
+	StartOpening(object_type::sk_anim);
 }
 
 void MainWindow::onMenuSelect_File_Save(wxCommandEvent& /* event */)
 {
-	StartModelSave();
+	StartSaving();
 }
 
 void MainWindow::onMenuSelect_File_Exit(wxCommandEvent& /* event */)
@@ -736,7 +1045,7 @@ void MainWindow::OnButton_DumpModel(wxCommandEvent& event)
 {
 	if (m_Model)
 	{
-		CXMFModelDumpDlg dialog(this);
+		CXMFDumpDlg dialog(this);
 		dialog.DumpModel(*m_Model);
 	}
 	else
@@ -745,20 +1054,43 @@ void MainWindow::OnButton_DumpModel(wxCommandEvent& event)
 	}
 }
 
-void MainWindow::StartModelImport()
+void MainWindow::OnButton_DumpSkAnim(wxCommandEvent& event)
+{
+	if (m_SkAnims)
+	{
+		CXMFDumpDlg dialog(this);
+		dialog.DumpSkAnim(*m_SkAnims);
+	}
+	else
+	{
+		event.Skip();
+	}
+}
+
+void MainWindow::StartImporting(object_type type)
 {
 	if (!try_save_changes())  //
 		return;
 
-	wxFileDialog dialog(this, "Import model", wxEmptyString, wxEmptyString,	 //
-						"(*.gltf;*.fbx)|*.gltf;*.fbx",						 //
-						wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-
-	if (dialog.ShowModal() == wxID_CANCEL)	//
+	std::string dlg_message;
+	std::string dlg_wildCard;
+	if (type == object_type::model)
+	{
+		dlg_message = "Import model";
+		dlg_wildCard = "(*.gltf;*.fbx)|*.gltf;*.fbx";
+	}
+	else if (type == object_type::sk_anim)
+	{
+		dlg_message = "Import skeletal animations";
+		dlg_wildCard = "(*.gltf;*.fbx)|*.gltf;*.fbx";
+	}
+	else
+	{
 		return;
+	}
 
-	CXMFImportDialog settingsDlg(this);
-	if (settingsDlg.ShowModal() == wxID_CANCEL)	 //
+	wxFileDialog dialog(this, dlg_message, wxEmptyString, wxEmptyString, dlg_wildCard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	if (dialog.ShowModal() == wxID_CANCEL)	//
 		return;
 
 	std::string filePath;
@@ -767,14 +1099,29 @@ void MainWindow::StartModelImport()
 		filePath = path;
 	}
 
-	cxmf::ImportSettings importInfo;
-	importInfo.angleGSN = settingsDlg.GetGSNAngle();
-	importInfo.enableGSN = settingsDlg.GSNEnabled();
-	importInfo.forceStatic = settingsDlg.ForceStaticEnabled();
-
 	std::string err;
-	cxmf::IModel* const newModel = cxmf::ImportModel(filePath, importInfo, err);
-	if (!newModel)
+	cxmf::IModel* newModel = nullptr;
+	cxmf::SkeletalAnimationArray* newAnims = nullptr;
+
+	if (type == object_type::model)
+	{
+		CXMFImportDialog settingsDlg(this);
+		if (settingsDlg.ShowModal() == wxID_CANCEL)	 //
+			return;
+
+		cxmf::ImportSettings importInfo;
+		importInfo.angleGSN = settingsDlg.GetGSNAngle();
+		importInfo.enableGSN = settingsDlg.GSNEnabled();
+		importInfo.forceStatic = settingsDlg.ForceStaticEnabled();
+
+		newModel = cxmf::ImportModel(filePath, importInfo, err);
+	}
+	else if (type == object_type::sk_anim)
+	{
+		newAnims = cxmf::ImportSkeletalAnimations(filePath, err);
+	}
+
+	if (!newModel && !newAnims)
 	{
 		if (err.empty()) err = "Unknown error!";
 		wxMessageBox(err, "Error", wxOK | wxCENTRE | wxICON_ERROR, this);
@@ -786,20 +1133,38 @@ void MainWindow::StartModelImport()
 		wxMessageBox(err, "Warning", wxOK | wxCENTRE | wxICON_WARNING, this);
 	}
 
-	SetModel(newModel);
+	if (newModel)
+		SetModel(newModel);
+	else if (newAnims)
+		SetSkAnim(newAnims);
+
 	set_status_text(filePath);
 	mark_changes();
 }
 
-void MainWindow::StartModelOpen()
+void MainWindow::StartOpening(object_type type)
 {
 	if (!try_save_changes())  //
 		return;
 
-	wxFileDialog dialog(this, "Open model", wxEmptyString, wxEmptyString,  //
-						"CXM Format (*.cxm)|*.cxm",						   //
-						wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+	std::string dlg_message;
+	std::string dlg_wildCard;
+	if (type == object_type::model)
+	{
+		dlg_message = "Open model";
+		dlg_wildCard = "CXM Format (*.cxm)|*.cxm";
+	}
+	else if (type == object_type::sk_anim)
+	{
+		dlg_message = "Open skeletal animations";
+		dlg_wildCard = "CXANM Format (*.cxanm)|*.cxanm";
+	}
+	else
+	{
+		return;
+	}
 
+	wxFileDialog dialog(this, dlg_message, wxEmptyString, wxEmptyString, dlg_wildCard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 	if (dialog.ShowModal() == wxID_CANCEL)	//
 		return;
 
@@ -810,8 +1175,18 @@ void MainWindow::StartModelOpen()
 	}
 
 	std::string err;
-	cxmf::IModel* const newModel = cxmf::OpenModel(filePath, err);
-	if (!newModel)
+	cxmf::IModel* newModel = nullptr;
+	cxmf::SkeletalAnimationArray* newAnims = nullptr;
+	if (type == object_type::model)
+	{
+		newModel = cxmf::OpenModel(filePath, err);
+	}
+	else if (type == object_type::sk_anim)
+	{
+		newAnims = cxmf::OpenSkeletalAnimations(filePath, err);
+	}
+
+	if (!newModel && !newAnims)
 	{
 		if (err.empty()) err = "Unknown error!";
 		wxMessageBox(err, "Error", wxOK | wxCENTRE | wxICON_ERROR, this);
@@ -823,18 +1198,33 @@ void MainWindow::StartModelOpen()
 		wxMessageBox(err, "Warning", wxOK | wxCENTRE | wxICON_WARNING, this);
 	}
 
-	SetModel(newModel);
+	if (newModel)
+		SetModel(newModel);
+	else if (newAnims)
+		SetSkAnim(newAnims);
+
 	set_status_text(filePath);
 }
 
-void MainWindow::StartModelSave()
+void MainWindow::StartSaving()
 {
-	if (!m_Model) return;
+	if (!HasAnyObject()) return;
+
+	std::string dlg_message;
+	std::string dlg_wildCard;
+	if (m_Model)
+	{
+		dlg_message = "Save model";
+		dlg_wildCard = "CXM Format (*.cxm)|*.cxm";
+	}
+	else if (m_SkAnims)
+	{
+		dlg_message = "Save skeletal animations";
+		dlg_wildCard = "CXANM Format (*.cxanm)|*.cxanm";
+	}
 
 	std::string filePath;
-	wxFileDialog dialog(this, "Save model", wxEmptyString, wxEmptyString,  //
-						"CXM Format (*.cxm)|*.cxm",						   //
-						wxFD_SAVE);
+	wxFileDialog dialog(this, dlg_message, wxEmptyString, wxEmptyString, dlg_wildCard, wxFD_SAVE);
 	for (;;)
 	{
 		if (dialog.ShowModal() == wxID_CANCEL)	//
@@ -856,7 +1246,17 @@ void MainWindow::StartModelSave()
 	}
 
 	std::string err;
-	if (cxmf::SaveModel(filePath, *m_Model, err))
+	bool saveResult = false;
+	if (m_Model)
+	{
+		saveResult = cxmf::SaveModel(filePath, *m_Model, err);
+	}
+	else if (m_SkAnims)
+	{
+		saveResult = cxmf::SaveSkeletalAnimations(filePath, *m_SkAnims, err);
+	}
+
+	if (saveResult)
 	{
 		wxMessageBox("Saved!", "Information", wxOK | wxCENTRE | wxICON_INFORMATION, this);
 		set_status_text(filePath);
