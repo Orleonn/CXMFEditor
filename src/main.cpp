@@ -1,4 +1,8 @@
 
+#ifdef _MSC_VER
+	#include "resource.h"
+#endif
+
 #include "wx/wxprec.h"
 #ifndef WX_PRECOMP
 	#include "wx/wx.h"
@@ -295,6 +299,18 @@ public:
 MainWindow::MainWindow()
 	: Super(nullptr), m_PreviewWnd(nullptr), m_Model(nullptr), m_SkAnims(nullptr), m_HasChanges(false)
 {
+#ifdef _MSC_VER
+	const HICON hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_ICON1));
+	if (hIcon)
+	{
+		wxIcon icon;
+		if (icon.CreateFromHICON(hIcon))
+		{
+			Super::SetIcon(icon);
+		}
+	}
+#endif
+
 	m_PreviewWnd = new PreviewWindow(Super::m_MainNotebook);
 	clear_main_panel();
 

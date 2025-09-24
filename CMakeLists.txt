@@ -29,6 +29,10 @@ set(SOURCE_FILES
 	${SOURCE_DIR}/ModelPreview.cpp
 )
 
+if(MSVC)
+	list(APPEND SOURCE_FILES ${CMAKE_SOURCE_DIR}/resources/resource.rc)
+endif()
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE assimp wx::net wx::core wx::base wx::gl glm::glm)
