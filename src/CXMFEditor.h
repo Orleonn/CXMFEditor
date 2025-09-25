@@ -33,6 +33,7 @@
 #include <wx/checkbox.h>
 #include <wx/slider.h>
 #include <wx/dialog.h>
+#include <wx/gauge.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +66,10 @@ class CXMFWindowBase : public wxFrame
 		wxStaticLine* m_staticline1;
 		wxListbook* m_listBones;
 		wxPanel* m_MainPanel_SkAnim;
+		wxButton* m_buttonSkAnimMerge;
+		wxButton* m_buttonSkAnimDelete;
 		wxButton* m_button7;
+		wxStaticLine* m_staticline3;
 		wxListbook* m_listSkAnims;
 		wxStatusBar* m_statusBar;
 
@@ -81,8 +85,10 @@ class CXMFWindowBase : public wxFrame
 		virtual void onMenuSelect_Info_About( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onMenuSelect_Info_Github( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnModelNameChange( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnButton_DumpModel( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnButton_DumpSkAnim( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_ModelDump( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_SkAnimMerge( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_SkAnimDeleteSelected( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButton_SkAnimDump( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
@@ -167,6 +173,25 @@ class CXMFDumpDlgBase : public wxDialog
 		CXMFDumpDlgBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Information"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 680,640 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
 
 		~CXMFDumpDlgBase();
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class CXMFLoadDialogBase
+///////////////////////////////////////////////////////////////////////////////
+class CXMFLoadDialogBase : public wxDialog
+{
+	private:
+
+	protected:
+		wxStaticText* m_StateText;
+		wxGauge* m_ProgressBar;
+
+	public:
+
+		CXMFLoadDialogBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 250,100 ), long style = wxSTAY_ON_TOP );
+
+		~CXMFLoadDialogBase();
 
 };
 

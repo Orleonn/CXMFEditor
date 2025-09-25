@@ -187,15 +187,34 @@ CXMFWindowBase::CXMFWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 	bSizer15 = new wxBoxSizer( wxVERTICAL );
 
 	wxBoxSizer* bSizer16;
-	bSizer16 = new wxBoxSizer( wxVERTICAL );
+	bSizer16 = new wxBoxSizer( wxHORIZONTAL );
+
+	m_buttonSkAnimMerge = new wxButton( m_MainPanel_SkAnim, wxID_ANY, _("Merge"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_buttonSkAnimMerge->SetToolTip( _("Merge with another animation file (.cxanm)") );
+
+	bSizer16->Add( m_buttonSkAnimMerge, 0, wxALL, 5 );
+
+	m_buttonSkAnimDelete = new wxButton( m_MainPanel_SkAnim, wxID_ANY, _("Delete selected"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_buttonSkAnimDelete->SetToolTip( _("Delete selected animation") );
+
+	bSizer16->Add( m_buttonSkAnimDelete, 0, wxALL, 5 );
+
+	wxBoxSizer* bSizer18;
+	bSizer18 = new wxBoxSizer( wxVERTICAL );
 
 	m_button7 = new wxButton( m_MainPanel_SkAnim, wxID_ANY, _("Dump"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_button7->SetToolTip( _("Show full animations information.") );
 
-	bSizer16->Add( m_button7, 0, wxALIGN_RIGHT|wxALL, 5 );
+	bSizer18->Add( m_button7, 0, wxALIGN_RIGHT|wxALL, 5 );
+
+
+	bSizer16->Add( bSizer18, 1, wxEXPAND, 5 );
 
 
 	bSizer15->Add( bSizer16, 0, wxEXPAND, 5 );
+
+	m_staticline3 = new wxStaticLine( m_MainPanel_SkAnim, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	bSizer15->Add( m_staticline3, 0, wxEXPAND | wxALL, 5 );
 
 	wxBoxSizer* bSizer17;
 	bSizer17 = new wxBoxSizer( wxVERTICAL );
@@ -243,8 +262,10 @@ CXMFWindowBase::CXMFWindowBase( wxWindow* parent, wxWindowID id, const wxString&
 	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_Info_About ), this, m_menuInfoAbout->GetId());
 	m_menuInfo->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( CXMFWindowBase::onMenuSelect_Info_Github ), this, m_menuInfoGithub->GetId());
 	m_textCtrlModelName->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( CXMFWindowBase::OnModelNameChange ), NULL, this );
-	m_button4->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFWindowBase::OnButton_DumpModel ), NULL, this );
-	m_button7->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFWindowBase::OnButton_DumpSkAnim ), NULL, this );
+	m_button4->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFWindowBase::OnButton_ModelDump ), NULL, this );
+	m_buttonSkAnimMerge->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFWindowBase::OnButton_SkAnimMerge ), NULL, this );
+	m_buttonSkAnimDelete->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFWindowBase::OnButton_SkAnimDeleteSelected ), NULL, this );
+	m_button7->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( CXMFWindowBase::OnButton_SkAnimDump ), NULL, this );
 }
 
 CXMFWindowBase::~CXMFWindowBase()
@@ -409,5 +430,52 @@ CXMFDumpDlgBase::CXMFDumpDlgBase( wxWindow* parent, wxWindowID id, const wxStrin
 }
 
 CXMFDumpDlgBase::~CXMFDumpDlgBase()
+{
+}
+
+CXMFLoadDialogBase::CXMFLoadDialogBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+
+	wxBoxSizer* bSizer19;
+	bSizer19 = new wxBoxSizer( wxVERTICAL );
+
+	wxBoxSizer* bSizer20;
+	bSizer20 = new wxBoxSizer( wxVERTICAL );
+
+
+	bSizer20->Add( 0, 21, 0, wxEXPAND, 5 );
+
+	wxBoxSizer* bSizer22;
+	bSizer22 = new wxBoxSizer( wxVERTICAL );
+
+	m_StateText = new wxStaticText( this, wxID_ANY, _("Loading..."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_StateText->Wrap( -1 );
+	bSizer22->Add( m_StateText, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 3 );
+
+
+	bSizer20->Add( bSizer22, 0, wxEXPAND, 5 );
+
+	wxBoxSizer* bSizer21;
+	bSizer21 = new wxBoxSizer( wxVERTICAL );
+
+	m_ProgressBar = new wxGauge( this, wxID_ANY, 100, wxDefaultPosition, wxDefaultSize, wxGA_HORIZONTAL );
+	m_ProgressBar->SetValue( 0 );
+	bSizer21->Add( m_ProgressBar, 0, wxALIGN_CENTER|wxALL, 5 );
+
+
+	bSizer20->Add( bSizer21, 1, wxEXPAND, 5 );
+
+
+	bSizer19->Add( bSizer20, 1, wxEXPAND, 5 );
+
+
+	this->SetSizer( bSizer19 );
+	this->Layout();
+
+	this->Centre( wxBOTH );
+}
+
+CXMFLoadDialogBase::~CXMFLoadDialogBase()
 {
 }

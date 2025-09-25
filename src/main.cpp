@@ -181,6 +181,65 @@ void CXMFDumpDlg::DumpSkAnim(const cxmf::SkeletalAnimationArray& animations)
 
 
 
+class CXMFLoadDialog final : private CXMFLoadDialogBase
+{
+private:
+	using Super = CXMFLoadDialogBase;
+
+private:
+	float m_Pos;
+
+public:
+	CXMFLoadDialog() = delete;
+
+	explicit CXMFLoadDialog(wxWindow* parent);
+
+	~CXMFLoadDialog() = default;
+
+public:
+	bool Show(bool b) override;
+	bool IsShown() const override;
+
+	void SetProgressPos(float pos);
+	float GetProgressPos() const
+	{
+		return m_Pos;
+	}
+};
+
+CXMFLoadDialog::CXMFLoadDialog(wxWindow* parent)
+	: Super(parent), m_Pos(0.0F)
+{
+	//
+}
+
+bool CXMFLoadDialog::Show(bool b)
+{
+	if (b == Super::IsShown())	//
+		return true;
+
+	Super::Show(b);
+	if (b)
+	{
+		Super::m_ProgressBar->SetValue(0);
+		m_Pos = 0.0F;
+	}
+	return true;
+}
+
+bool CXMFLoadDialog::IsShown() const
+{
+	return Super::IsShown();
+}
+
+void CXMFLoadDialog::SetProgressPos(float pos)
+{
+	m_Pos = std::clamp<float>(pos, 0.0F, 1.0F);
+	Super::m_ProgressBar->SetValue(static_cast<int>(m_Pos * 100.0F + 0.5F));
+}
+
+
+
 class SkeletonAnimNodeUserData final : public wxObject
 {
 public:
@@ -273,8 +332,10 @@ private:
 	void onMenuSelect_Info_About(wxCommandEvent& event) override;
 	void onMenuSelect_Info_Github(wxCommandEvent& event) override;
 	void OnModelNameChange(wxCommandEvent& event) override;
-	void OnButton_DumpModel(wxCommandEvent& event) override;
-	void OnButton_DumpSkAnim(wxCommandEvent& event) override;
+	void OnButton_ModelDump(wxCommandEvent& event) override;
+	void OnButton_SkAnimMerge(wxCommandEvent& event) override;
+	void OnButton_SkAnimDeleteSelected(wxCommandEvent& event) override;
+	void OnButton_SkAnimDump(wxCommandEvent& event) override;
 
 private:
 	void StartImporting(object_type type);
@@ -752,6 +813,9 @@ void MainWindow::_on_animation_node_name_change(wxCommandEvent& event)
 
 void MainWindow::_fill_as_static()
 {
+	CXMFLoadDialog load_dialog(this);
+	load_dialog.Show(true);
+
 	const cxmf::StaticModel& model = *m_Model->StaticModelCast();
 
 	Super::m_textCtrlModelName->SetValue(model.name);
@@ -769,9 +833,12 @@ void MainWindow::_fill_as_static()
 	const uint32_t meshesCount = static_cast<uint32_t>(model.meshes.size());
 	for (uint32_t i_mesh = 0; i_mesh < meshesCount; ++i_mesh)
 	{
+		const cxmf::Mesh& mesh = model.meshes[i_mesh];
+
+		load_dialog.SetProgressPos(static_cast<float>(i_mesh + 1) / meshesCount);
+
 		pageName = pagePrefix + std::to_string(i_mesh);
 
-		const cxmf::Mesh& mesh = model.meshes[i_mesh];
 		const size_t vertexCount = mesh.vertices.size();
 		const size_t faceCount = mesh.indices.size() / 3;
 		totalVerticies += vertexCount;
@@ -797,6 +864,9 @@ void MainWindow::_fill_as_static()
 
 void MainWindow::_fill_as_skinned()
 {
+	CXMFLoadDialog load_dialog(this);
+	load_dialog.Show(true);
+
 	const cxmf::SkinnedModel& model = *m_Model->SkinnedModelCast();
 
 	Super::m_textCtrlModelName->SetValue(model.name);
@@ -815,9 +885,12 @@ void MainWindow::_fill_as_skinned()
 	const uint32_t meshesCount = static_cast<uint32_t>(model.meshes.size());
 	for (uint32_t i_mesh = 0; i_mesh < meshesCount; ++i_mesh)
 	{
+		const cxmf::SkinnedMesh& mesh = model.meshes[i_mesh];
+
+		load_dialog.SetProgressPos(static_cast<float>(i_mesh + 1) / meshesCount * 0.5F);
+
 		pageName = pagePrefix + std::to_string(i_mesh);
 
-		const cxmf::SkinnedMesh& mesh = model.meshes[i_mesh];
 		const size_t vertexCount = mesh.vertices.size();
 		const size_t faceCount = mesh.indices.size() / 3;
 		totalVerticies += vertexCount;
@@ -841,8 +914,11 @@ void MainWindow::_fill_as_skinned()
 	const uint32_t bonesCount = static_cast<uint32_t>(model.bones.size());
 	for (uint32_t i_bone = 0; i_bone < bonesCount; ++i_bone)
 	{
-		pageName = pagePrefix + std::to_string(i_bone);
 		const cxmf::Bone& node = model.bones[i_bone];
+
+		load_dialog.SetProgressPos(0.5F + static_cast<float>(i_bone + 1) / bonesCount * 0.5F);
+
+		pageName = pagePrefix + std::to_string(i_bone);
 
 		wxPanel* const mainPanel = new wxPanel(boneList);
 		wxBoxSizer* const mainSizer = new wxBoxSizer(wxVERTICAL);
@@ -861,11 +937,22 @@ void MainWindow::_fill_as_skinned()
 
 void MainWindow::_fill_as_sk_anim()
 {
+	CXMFLoadDialog load_dialog(this);
+	load_dialog.Show(true);
+
+	Super::m_buttonSkAnimMerge->Enable(false);
+	Super::m_buttonSkAnimDelete->Enable(false);
+
 	wxListbook* const listAnims = Super::m_listSkAnims;
 	listAnims->DeleteAllPages();
 
-	for (cxmf::SkeletalAnimation& animation : *m_SkAnims)
+	const uint32_t animsCount = static_cast<uint32_t>(m_SkAnims->size());
+	for (uint32_t i_anim = 0; i_anim < animsCount; ++i_anim)
 	{
+		cxmf::SkeletalAnimation& animation = (*m_SkAnims)[i_anim];
+
+		load_dialog.SetProgressPos(static_cast<float>(i_anim + 1) / animsCount);
+
 		wxPanel* const animPanel = new wxPanel(listAnims);
 		wxBoxSizer* const animSizer = new wxBoxSizer(wxVERTICAL);
 
@@ -876,6 +963,15 @@ void MainWindow::_fill_as_sk_anim()
 		animSizer->Fit(animPanel);
 		listAnims->AddPage(animPanel, animation.name);
 	}
+
+	const size_t pageCount = listAnims->GetPageCount();
+	if (pageCount > 0)
+	{
+		listAnims->SetSelection(0);
+	}
+
+	Super::m_buttonSkAnimDelete->Enable(pageCount > 1);
+	Super::m_buttonSkAnimMerge->Enable(true);
 }
 
 void MainWindow::set_total_verticies(size_t count)
@@ -1057,7 +1153,7 @@ void MainWindow::OnModelNameChange(wxCommandEvent& event)
 	}
 }
 
-void MainWindow::OnButton_DumpModel(wxCommandEvent& event)
+void MainWindow::OnButton_ModelDump(wxCommandEvent& event)
 {
 	if (m_Model)
 	{
@@ -1070,7 +1166,105 @@ void MainWindow::OnButton_DumpModel(wxCommandEvent& event)
 	}
 }
 
-void MainWindow::OnButton_DumpSkAnim(wxCommandEvent& event)
+void MainWindow::OnButton_SkAnimMerge(wxCommandEvent& /* event */)
+{
+	if (!m_SkAnims) return;
+
+	wxFileDialog dialog(this, "Open skeletal animations",  //
+						wxEmptyString, wxEmptyString,	   //
+						"CXANM Format (*.cxanm)|*.cxanm",  //
+						wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+	if (dialog.ShowModal() == wxID_CANCEL)	//
+		return;
+
+	std::string err;
+	std::string filePath;
+	{
+		const wxString path = dialog.GetPath();
+		filePath = path;
+	}
+
+	cxmf::SkeletalAnimationArray* const otherAnimations = cxmf::OpenSkeletalAnimations(filePath, err);
+	if (!otherAnimations)
+	{
+		if (err.empty()) err = "Unknown error!";
+		wxMessageBox(err, "Error", wxOK | wxCENTRE | wxICON_ERROR, this);
+		return;
+	}
+
+	if (!err.empty())
+	{
+		wxMessageBox(err, "Warning", wxOK | wxCENTRE | wxICON_WARNING, this);
+	}
+
+	uint32_t mergeCount = 0;
+	for (const cxmf::SkeletalAnimation& otherAnim : *otherAnimations)
+	{
+		bool is_exist = false;
+		for (cxmf::SkeletalAnimation& thisAnim : *m_SkAnims)
+		{
+			if (otherAnim.name != thisAnim.name)  //
+				continue;
+
+			is_exist = true;
+
+			const std::string msg = std::format("The animation '{}' already exists.\nDo you want to overwrite it?",	 //
+												otherAnim.name);
+			const int requestRes = wxMessageBox(msg, "Question", wxYES_NO | wxCENTRE | wxICON_QUESTION, this);
+			if (requestRes == wxYES)
+			{
+				thisAnim = otherAnim;
+				++mergeCount;
+			}
+			break;
+		}
+
+		if (!is_exist)
+		{
+			m_SkAnims->push_back(otherAnim);
+			++mergeCount;
+		}
+	}
+
+	delete otherAnimations;
+
+	if (mergeCount > 0)
+	{
+		_fill_as_sk_anim();
+		mark_changes();
+
+		const std::string msg = std::format("Added animations: {}", mergeCount);
+		wxMessageBox(msg, "Information", wxOK | wxCENTRE | wxICON_INFORMATION, this);
+	}
+}
+
+void MainWindow::OnButton_SkAnimDeleteSelected(wxCommandEvent& /* event */)
+{
+	if (!m_SkAnims || m_SkAnims->size() <= 1 || Super::m_listSkAnims->GetPageCount() <= 1)
+	{
+		Super::m_buttonSkAnimDelete->Enable(false);
+		return;
+	}
+
+	const int index = Super::m_listSkAnims->GetSelection();
+	if (index == wxNOT_FOUND)  //
+		return;
+
+	const cxmf::SkeletalAnimationArray::const_iterator _It = m_SkAnims->cbegin() + index;
+
+	const std::string msg = std::format("Are you sure you want to remove the '{}' animation?", _It->name);
+	const int requestRes = wxMessageBox(msg, "Question", wxYES_NO | wxCENTRE | wxICON_QUESTION, this);
+	if (requestRes != wxYES)  //
+		return;
+
+	Super::m_listSkAnims->DeletePage(index);
+	Super::m_buttonSkAnimDelete->Enable(Super::m_listSkAnims->GetPageCount() > 1);
+	m_SkAnims->erase(_It);
+	mark_changes();
+}
+
+void MainWindow::OnButton_SkAnimDump(wxCommandEvent& event)
 {
 	if (m_SkAnims)
 	{
